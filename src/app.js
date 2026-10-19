@@ -94,13 +94,13 @@
     try{ localStorage.setItem(key, on ? '1' : '0'); }catch(err){}
   }
 
-  function keyButton(k, big){
+  function keyButton(k, big, label){
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'key' + (big ? ' big' : '');
-    btn.textContent = big ? (FACE[k] || k) : (FACE[k] || k);
-    btn.setAttribute('aria-label', 'ปุ่ม' + (NAMES[k] || k));
-    btn.title = NAMES[k] || k;
+    btn.className = 'key' + (big ? ' big' : '') + (label ? ' named' : '');
+    btn.textContent = label || FACE[k] || k;
+    btn.setAttribute('aria-label', label ? ('ปุ่ม' + label) : ('ปุ่ม' + (NAMES[k] || k)));
+    btn.title = label ? (label + ' (ปุ่ม' + (NAMES[k] || k) + ')') : (NAMES[k] || k);
 
     function down(ev){
       if(ev){
@@ -127,17 +127,21 @@
     return btn;
   }
 
-  function padShown(){ return pref(PADKEY, coarse()); }
+  /* ผู้สร้างเกมสั่งให้มีปุ่มบนหน้าจอ ก็ขึ้นบนคอมพิวเตอร์ด้วย
+     แต่ถ้าผู้เล่นเคยกดซ่อนไว้เอง ความต้องการของผู้เล่นมาก่อน */
+  function padShown(forced){ return pref(PADKEY, coarse() || !!forced); }
 
   function refreshPad(){
-    var need = engine ? engine.controls() : { keys:{}, pointer:false, tap:false };
+    var need = engine ? engine.controls() : { keys:{}, buttons:[], pointer:false, tap:false, forced:false };
     var keys = Object.keys(need.keys || {});
-    var dirs = keys.filter(function(k){ return DIRS.indexOf(k) >= 0; });
-    var acts = keys.filter(function(k){ return DIRS.indexOf(k) < 0; });
-    var on = padShown();
+    var named = need.buttons || [];
+    var namedKeys = named.map(function(b){ return b.key; });
+    var dirs = keys.filter(function(k){ return DIRS.indexOf(k) >= 0 && namedKeys.indexOf(k) < 0; });
+    var acts = keys.filter(function(k){ return DIRS.indexOf(k) < 0 && namedKeys.indexOf(k) < 0; });
+    var on = padShown(need.forced);
 
     $('btnPad').setAttribute('aria-pressed', String(on));
-    $('btnPad').disabled = !keys.length;
+    $('btnPad').disabled = !(keys.length || named.length);
 
     var dirBox = $('padDir'), actBox = $('padAct');
     dirBox.innerHTML = ''; actBox.innerHTML = '';
@@ -155,11 +159,15 @@
       }
       dirBox.appendChild(b);
     });
+    /* ปุ่มที่ผู้สร้างเกมตั้งชื่อเองมาก่อน แล้วค่อยตามด้วยปุ่มที่ระบบเดาให้ */
+    named.forEach(function(b){
+      actBox.appendChild(keyButton(b.key, true, b.label));
+    });
     acts.forEach(function(k, i){
-      actBox.appendChild(keyButton(k, i === 0));
+      actBox.appendChild(keyButton(k, i === 0 && !named.length));
     });
 
-    $('pad').hidden = !(on && keys.length);
+    $('pad').hidden = !(on && (keys.length || named.length));
 
     var hints = [];
     if(need.pointer) hints.push('ลากนิ้วหรือเมาส์บนเวทีเพื่อบังคับ');
@@ -452,6 +460,14 @@
     '<h3>พื้นและแท่นยืน</h3>' +
     '<p>ใช้ <code>ให้ … ยืนบน … ได้</code> เพื่อให้ชนแล้วหยุด และบล็อก <code>ให้ … กระโดด</code> จะทำงานเมื่อยืนอยู่บนพื้นเท่านั้น ส่วน <code>ให้ … หยุดที่ขอบ</code> กันตัวละครหลุดออกนอกเวที</p>' +
     '<p>แรงโน้มถ่วงดึงทุกตัวละครรวมถึงพื้นเอง ฉากที่ต้องอยู่นิ่ง ๆ อย่างพื้น แท่น และเหรียญลอย จึงต้องใส่บล็อก <code>📌 ตรึงไว้กับที่</code> ไม่งั้นจะร่วงหายไปทั้งฉาก ตัวที่ถูกตรึงยังตั้งความเร็วให้เลื่อนเองได้ ใช้ทำแท่นเลื่อนได้สบาย</p>' +
+    '<h3>ปุ่มบังคับบนหน้าจอ</h3>' +
+    '<p>อยากให้เกมเล่นง่ายทั้งบนคอมพิวเตอร์และมือถือ ให้ใส่สองบล็อกนี้ไว้ในบล็อกเริ่มเกม</p>' +
+    '<ul>' +
+    '<li><code>🕹️ แสดงแป้นทิศทางบนหน้าจอ</code> เลือกได้ว่าเอาสี่ทิศ ซ้าย-ขวา หรือขึ้น-ลง</li>' +
+    '<li><code>🔘 เพิ่มปุ่ม … บนหน้าจอ แทนปุ่ม …</code> ตั้งชื่อปุ่มเองได้ เช่น กระโดด หรือ ยิง</li>' +
+    '</ul>' +
+    '<p>ปุ่มบนหน้าจอเป็นร่างแฝงของปุ่มคีย์บอร์ดที่เลือกไว้ บล็อก <code>⌨️ เมื่อกดปุ่ม</code> และ <code>กดปุ่ม … ค้างอยู่</code> จึงทำงานเหมือนเดิมทุกอย่าง ไม่ต้องเขียนสองทาง และบล็อก <code>🦘 ให้ … กระโดดเมื่อกดปุ่ม …</code> รวบการรอปุ่มกับการกระโดดไว้ในบล็อกเดียว</p>' +
+    '<p>เมื่อเกมสั่งแสดงปุ่มเอง ปุ่มจะขึ้นบนคอมพิวเตอร์ด้วย ผู้เล่นกดปิดได้ที่ปุ่ม 🎮 ใต้เวที ส่วนปุ่ม ⤢ ข้างกันคือโหมดเต็มพื้นที่ สำหรับจอเล็ก</p>' +
     '<h3>เล็งและยิง</h3>' +
     '<p>มุมหมุน 0 องศาคือชี้ไปทางขวา แล้วเพิ่มตามเข็มนาฬิกา บล็อก <code>🧭 หัน … ไปทางเมาส์</code> ปรับมุมให้เอง ส่วน <code>🔫 ยิง … ออกจาก …</code> จะสร้างกระสุนที่ตัวผู้ยิงแล้วพุ่งไปตามมุมนั้น ใช้สองบล็อกนี้คู่กันก็ได้เกมเล็งด้วยเมาส์แล้ว ลองดูเกมตัวอย่าง “เอาตัวรอด”</p>' +
     '<h3>เมื่อเกมไม่เป็นอย่างที่คิด</h3>' +
@@ -666,7 +682,7 @@
     $('ovBtn').onclick = run;
     $('btnClearLog').onclick = function(){ $('log').innerHTML = ''; $('logDot').hidden = true; };
     $('btnPad').onclick = function(){
-      var next = !padShown();
+      var next = !padShown(engine.controls().forced);
       setPref(PADKEY, next);
       refreshPad();
       toast(next ? 'แสดงปุ่มบังคับบนหน้าจอ' : 'ซ่อนปุ่มบังคับแล้ว');

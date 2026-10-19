@@ -55,6 +55,10 @@ function checkControls(key, engine) {
   if (gotKeys !== wantKeys) out.push(`ปุ่มที่ตรวจได้ [${gotKeys || '—'}] ไม่ตรงกับที่ควรเป็น [${wantKeys || '—'}]`);
   if (!!got.pointer !== want.pointer) out.push(`การบังคับด้วยเมาส์ตรวจได้ ${!!got.pointer} ควรเป็น ${want.pointer}`);
   if (!!got.tap !== want.tap) out.push(`การแตะบนเวทีตรวจได้ ${!!got.tap} ควรเป็น ${want.tap}`);
+  if (!!got.forced !== want.forced) out.push(`การสั่งแสดงปุ่มเองตรวจได้ ${!!got.forced} ควรเป็น ${want.forced}`);
+  const gotBtn = (got.buttons || []).map((b) => `${b.label}→${b.key}`).join(' ');
+  const wantBtn = want.buttons.map(([l, k]) => `${l}→${k}`).join(' ');
+  if (gotBtn !== wantBtn) out.push(`ปุ่มที่ตั้งชื่อเองตรวจได้ [${gotBtn || '—'}] ควรเป็น [${wantBtn || '—'}]`);
   return out;
 }
 
@@ -152,12 +156,16 @@ const PILOTS = {
 /* การบังคับที่แต่ละเกมต้องใช้ หน้าจอสร้างปุ่มจากข้อมูลนี้
    ถ้าตารางนี้เพี้ยน ผู้เล่นบนมือถือจะได้ปุ่มผิดหรือไม่ได้ปุ่มเลย */
 const CONTROLS = {
-  platformer: { keys: ['ArrowLeft', 'ArrowRight', 'Space'], pointer: false, tap: false },
-  shooter:    { keys: ['ArrowLeft', 'ArrowRight', 'Space'], pointer: false, tap: false },
-  collector:  { keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'], pointer: false, tap: false },
-  breakout:   { keys: [], pointer: true, tap: false },
-  clicker:    { keys: [], pointer: false, tap: true },
-  survivor:   { keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'], pointer: true, tap: true },
+  platformer: { keys: ['ArrowLeft', 'ArrowRight', 'Space'], pointer: false, tap: false,
+                forced: true, buttons: [['กระโดด', 'Space']] },
+  shooter:    { keys: ['ArrowLeft', 'ArrowRight', 'Space'], pointer: false, tap: false,
+                forced: true, buttons: [['ยิง', 'Space']] },
+  collector:  { keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'], pointer: false, tap: false,
+                forced: true, buttons: [] },
+  breakout:   { keys: [], pointer: true, tap: false, forced: false, buttons: [] },
+  clicker:    { keys: [], pointer: false, tap: true, forced: false, buttons: [] },
+  survivor:   { keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'], pointer: true, tap: true,
+                forced: true, buttons: [] },
 };
 
 const EXPECT = {
@@ -237,14 +245,19 @@ console.log('\nเล่นด้วยปุ่มบนหน้าจอ (ไ
       const goal = flee ? { x: foe.x > p.x ? 0 : 480, y: p.y } : coin;
       hold('ArrowLeft', !!goal && goal.x < p.x - 6);
       hold('ArrowRight', !!goal && goal.x > p.x + 6);
-      if (p.onGround && (flee || (coin && coin.y < p.y - 12))) engine.press('Space');
-      else engine.release('Space');
+      /* กดผ่านปุ่ม “กระโดด” ที่บล็อกสร้างไว้ ไม่ได้อ้างชื่อปุ่มคีย์บอร์ดเอง */
+      const jk = (engine.controls().buttons[0] || {}).key || 'Space';
+      if (p.onGround && (flee || (coin && coin.y < p.y - 12))) engine.press(jk);
+      else engine.release(jk);
     }
     const cb = rafCallback; rafCallback = null;
     cb(t);
     if (!st.running) break;
   }
   const errors = logs.filter((l) => l.level === 'err');
+  /* ปุ่มกระโดดบนหน้าจอต้องผูกกับปุ่มที่บล็อก “เมื่อกดปุ่ม” รออยู่จริง */
+  const jumpBtn = (engine.controls().buttons || []).find((b) => b.label === 'กระโดด');
+  if (!jumpBtn) { failed++; console.log('✗ platformer  ไม่พบปุ่ม “กระโดด” บนหน้าจอ'); }
   const ok = st.score >= 10 && !errors.length;
   if (!ok) failed++;
   console.log(`${ok ? '✓' : '✗'} platformer  กดปุ่มบนหน้าจอ ${frames} เฟรม · คะแนน ${st.score}` +

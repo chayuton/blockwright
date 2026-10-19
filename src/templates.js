@@ -45,7 +45,7 @@
     on_collide:['A','B'], on_edge:['NAME'], set_edge:['NAME'], set_solid:['A','B'], touching:['A','B'],
     sprite_fixed:['NAME'], sprite_look:['NAME'], sprite_turn:['NAME'],
     sprite_point:['NAME','TARGET'], sprite_point_mouse:['NAME'], sprite_forward:['NAME'],
-    distance:['A','B'], shoot:['BULLET','FROM']
+    distance:['A','B'], shoot:['BULLET','FROM'], ctrl_jump_key:['NAME']
   };
   var VARREG = {}, VARSEQ = 0;
   function SV(name){
@@ -76,7 +76,7 @@
   var TEMPLATES = {
 
   'platformer': { label:'🧍 แพลตฟอร์ม — เก็บเหรียญ',
-    note:'ลูกศรซ้ายขวาเดิน เว้นวรรคกระโดดขึ้นแท่น เก็บเหรียญให้ครบสี่เหรียญโดยไม่โดนมอนสเตอร์',
+    note:'กดลูกศรหรือปุ่มบนหน้าจอเพื่อเดิน กดปุ่มกระโดดขึ้นแท่น เก็บเหรียญให้ครบสี่เหรียญโดยไม่โดนมอนสเตอร์',
     build:function(){ return doc([
     at(SETUP([
       B('game_background', { COL:'#a8dcf5' }),
@@ -92,6 +92,8 @@
       FIX('แท่น'),
       SPAWN('แท่น', 360, 192),
       SPAWN('แท่น', 240, 126),
+      B('pad_show', { MODE:'lr' }),
+      B('pad_button', { LABEL:'กระโดด', K:'Space' }),
       B('sprite_create', { NAME:'ผู้เล่น', LOOK:'🧍', SIZE:32 }, { X:N(60), Y:N(300) }),
       B('set_edge', { NAME:'ผู้เล่น', MODE:'stop' }),
       B('set_solid', { A:'ผู้เล่น', B:'พื้น' }),
@@ -119,12 +121,14 @@
   ]); }},
 
   'shooter': { label:'🚀 ยานอวกาศ — ยิงศัตรู',
-    note:'เลื่อนซ้ายขวาด้วยลูกศร เว้นวรรคยิง ทำให้ถึง 100 คะแนนก่อนโดนชน',
+    note:'เลื่อนซ้ายขวาด้วยลูกศรหรือปุ่มบนหน้าจอ กดปุ่มยิงให้ถึง 100 คะแนนก่อนโดนชน',
     build:function(){ return doc([
     at(SETUP([
       B('game_background', { COL:'#07080f' }),
       B('game_title', { TXT:'ป้องกันกาแล็กซี' }),
       B('game_gravity', null, { N:N(0) }),
+      B('pad_show', { MODE:'lr' }),
+      B('pad_button', { LABEL:'ยิง', K:'Space' }),
       B('sprite_create', { NAME:'ยาน', LOOK:'🚀', SIZE:34 }, { X:N(240), Y:N(322) }),
       B('set_edge', { NAME:'ยาน', MODE:'stop' }),
       B('sprite_define', { NAME:'กระสุน', LOOK:'CIRC', SIZE:9 }),
@@ -158,6 +162,7 @@
       B('game_background', { COL:'#8ed08a' }),
       B('game_title', { TXT:'เก็บแอปเปิลให้ทัน' }),
       B('game_gravity', null, { N:N(0) }),
+      B('pad_show', { MODE:'arrows' }),
       B('sprite_create', { NAME:'แมว', LOOK:'🐱', SIZE:34 }, { X:N(240), Y:N(190) }),
       B('set_edge', { NAME:'แมว', MODE:'stop' }),
       B('sprite_define', { NAME:'แอปเปิล', LOOK:'🍎', SIZE:24 }),
@@ -246,6 +251,7 @@
       B('game_gravity', null, { N:N(0) }),
       B('lives_set', null, { N:N(3) }),
 
+      B('pad_show', { MODE:'arrows' }),
       B('sprite_create', { NAME:'ยาน', LOOK:'RECT', SIZE:20 }, { X:N(240), Y:N(190) }),
       B('sprite_size', { NAME:'ยาน' }, { W:N(34), H:N(13) }),
       B('sprite_color', { NAME:'ยาน', COL:'#f08a24' }),

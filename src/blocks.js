@@ -42,6 +42,10 @@
     ['▲ ลูกศรขึ้น · Up','ArrowUp'], ['▼ ลูกศรลง · Down','ArrowDown'],
     ['เว้นวรรค · Space','Space'], ['W','w'], ['A','a'], ['S','s'], ['D','d'], ['Enter','Enter']
   ];
+  var PADMODES = [
+    ['4 ทิศ · 4-way','arrows'], ['ซ้าย-ขวา · Left/Right','lr'],
+    ['ขึ้น-ลง · Up/Down','ud'], ['ปุ่ม WASD · WASD','wasd']
+  ];
   var PROPS = [
     ['ตำแหน่ง x · x','x'], ['ตำแหน่ง y · y','y'],
     ['ความเร็วแนวนอน · vx','vx'], ['ความเร็วแนวตั้ง · vy','vy'],
@@ -347,6 +351,23 @@
     args0:[SPR('BULLET'), SPR('FROM'), {type:'input_value', name:'SPD', check:'Number'}],
     inputsInline:true, previousStatement:null, nextStatement:null, colour:C.input,
     tooltip:'สร้างกระสุนที่ตำแหน่งผู้ยิง แล้วพุ่งออกไปตามมุมที่ผู้ยิงหันอยู่' },
+
+  { type:'pad_show', message0:'🕹️ แสดงแป้นทิศทางบนหน้าจอ แบบ %1',
+    args0:[{type:'field_dropdown', name:'MODE', options:PADMODES}],
+    previousStatement:null, nextStatement:null, colour:C.input,
+    tooltip:'ขึ้นแป้นลูกศรให้กดด้วยนิ้วหรือเมาส์ ทำงานเหมือนกดปุ่มลูกศรจริง เล่นได้ทั้งคอมพิวเตอร์และมือถือ' },
+
+  { type:'pad_button', message0:'🔘 เพิ่มปุ่ม %1 บนหน้าจอ แทนปุ่ม %2',
+    args0:[{type:'field_input', name:'LABEL', text:'กระโดด'},
+           {type:'field_dropdown', name:'K', options:KEYS}],
+    previousStatement:null, nextStatement:null, colour:C.input,
+    tooltip:'ปุ่มที่ตั้งชื่อเองบนหน้าจอ กดแล้วเหมือนกดปุ่มคีย์บอร์ดที่เลือกไว้ จึงใช้กับบล็อก “เมื่อกดปุ่ม” และ “กดปุ่มค้างอยู่” ได้ทันที' },
+
+  { type:'ctrl_jump_key', message0:'🦘 ให้ %1 กระโดดเมื่อกดปุ่ม %2 แรง %3',
+    args0:[SPR('NAME'), {type:'field_dropdown', name:'K', options:KEYS},
+           {type:'input_value', name:'P', check:'Number'}],
+    inputsInline:true, previousStatement:null, nextStatement:null, colour:C.input,
+    tooltip:'รวมการรอปุ่มกับการกระโดดไว้ในบล็อกเดียว วางในบล็อกเมื่อเริ่มเกมได้เลย กระโดดได้เมื่อยืนอยู่บนพื้นเท่านั้น' },
 
   { type:'lives_set', message0:'❤️ ตั้งพลังชีวิตเป็น %1',
     args0:[{type:'input_value', name:'N', check:'Number'}],

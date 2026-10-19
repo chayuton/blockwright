@@ -19,7 +19,7 @@
         keys:{}, keyQueue:[], clickQueue:[],
         mouse:{ x:W/2, y:H/2 },
         h:{ start:[], tick:[], key:{}, click:{}, stage:[], collide:[], edge:{}, timeout:[], every:[], after:[] },
-        need:{ keys:{}, pointer:false, tap:false },
+        need:{ keys:{}, buttons:[], pointer:false, tap:false, forced:false },
         solids:[], running:false, over:null, errors:0
       };
     }
@@ -179,6 +179,25 @@
           if(mode !== 'ud') e.vx = ax * s;
           if(mode !== 'lr') e.vy = ay * s;
         });
+      },
+      /* ปุ่มบังคับบนหน้าจอที่ผู้สร้างเกมสั่งเอง
+         ปุ่มบนหน้าจอเป็นร่างแฝงของปุ่มคีย์บอร์ด บล็อกเดิมจึงใช้ได้ทั้งหมด */
+      showPad:function(mode){
+        var ks = MODE_KEYS[mode] || MODE_KEYS.arrows, i;
+        for(i = 0; i < ks.length; i++) S.need.keys[ks[i]] = true;
+        S.need.forced = true;
+      },
+      screenButton:function(label, key){
+        S.need.keys[key] = true;
+        S.need.forced = true;
+        for(var i = 0; i < S.need.buttons.length; i++){
+          if(S.need.buttons[i].key === key){ S.need.buttons[i].label = String(label || key); return; }
+        }
+        S.need.buttons.push({ label:String(label || key), key:key });
+      },
+      jumpWith:function(name, key, power){
+        S.need.keys[key] = true;
+        G.onKey(key, function(){ G.jump(name, power); });
       },
       jump:function(name, p){
         list(name).forEach(function(e){
@@ -425,8 +444,11 @@
       ud:['ArrowUp','ArrowDown'],
       wasd:['a','d','w','s']
     };
+    var RE_PAD = /G\.showPad\("([a-z]+)"\)/g;
+    var RE_BTN = /G\.screenButton\(("(?:[^"\\]|\\.)*"),\s*("(?:[^"\\]|\\.)*")\)/g;
+    var RE_JUMPKEY = /G\.jumpWith\("(?:[^"\\]|\\.)*",\s*("(?:[^"\\]|\\.)*")/g;
     function scanControls(code){
-      var need = { keys:{}, pointer:false, tap:false }, m, i, ks;
+      var need = { keys:{}, buttons:[], pointer:false, tap:false, forced:false }, m, i, ks;
       code = String(code || '');
 
       RE_KEY.lastIndex = 0;
@@ -439,6 +461,28 @@
         ks = MODE_KEYS[m[1]];
         if(ks){ for(i = 0; i < ks.length; i++) need.keys[ks[i]] = true; }
         else if(m[1] === 'mouse' || m[1] === 'mousex') need.pointer = true;
+      }
+
+      /* ปุ่มที่ผู้สร้างเกมสั่งไว้เอง อ่านได้ตั้งแต่ยังไม่เริ่มเล่น */
+      RE_PAD.lastIndex = 0;
+      while((m = RE_PAD.exec(code))){
+        ks = MODE_KEYS[m[1]];
+        if(ks){ for(i = 0; i < ks.length; i++) need.keys[ks[i]] = true; }
+        need.forced = true;
+      }
+      RE_BTN.lastIndex = 0;
+      while((m = RE_BTN.exec(code))){
+        try{
+          var label = JSON.parse(m[1]), key = JSON.parse(m[2]), found = false;
+          need.keys[key] = true;
+          need.forced = true;
+          for(i = 0; i < need.buttons.length; i++) if(need.buttons[i].key === key) found = true;
+          if(!found) need.buttons.push({ label:label || key, key:key });
+        }catch(err){}
+      }
+      RE_JUMPKEY.lastIndex = 0;
+      while((m = RE_JUMPKEY.exec(code))){
+        try{ need.keys[JSON.parse(m[1])] = true; }catch(err){}
       }
 
       if(/G\.pointMouse\(/.test(code)) need.pointer = true;

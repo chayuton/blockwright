@@ -105,6 +105,10 @@
   gen('shoot', function(b,g){
     return 'G.shoot(' + SN(b,'BULLET') + ',' + SN(b,'FROM') + ',' + V(b,g,'SPD','400') + ');\n'; });
   gen('lives_set', function(b,g){ return 'G.setLives(' + V(b,g,'N','3') + ');\n'; });
+  gen('pad_show', function(b){ return 'G.showPad(' + F(b,'MODE') + ');\n'; });
+  gen('pad_button', function(b){ return 'G.screenButton(' + F(b,'LABEL') + ',' + F(b,'K') + ');\n'; });
+  gen('ctrl_jump_key', function(b,g){
+    return 'G.jumpWith(' + SN(b,'NAME') + ',' + F(b,'K') + ',' + V(b,g,'P','520') + ');\n'; });
 
   /* =====================  กล่องเครื่องมือ  ===================== */
   function tb(type, shadows){
@@ -138,8 +142,9 @@
     ]},
     { kind:'category', name:'🎮 การควบคุม', colour:String(C.input), contents:[
       tb('on_key'), tb('key_down'), tb('on_click'), tb('on_click_stage'),
-      tb('ctrl_move',{SPD:180}), tb('ctrl_jump',{P:520}), tb('ctrl_follow',{SPD:70}),
-      tb('shoot',{SPD:420})
+      tb('pad_show'), tb('pad_button'),
+      tb('ctrl_move',{SPD:180}), tb('ctrl_jump',{P:520}), tb('ctrl_jump_key',{P:520}),
+      tb('ctrl_follow',{SPD:70}), tb('shoot',{SPD:420})
     ]},
     { kind:'category', name:'⏱️ เวลา', colour:String(C.time), contents:[
       tb('on_tick'), tb('on_every',{SEC:1}), tb('after_delay',{SEC:2}),
