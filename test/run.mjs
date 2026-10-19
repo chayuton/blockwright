@@ -44,6 +44,20 @@ function compile(key) {
   return { blocks, code };
 }
 
+/* เทียบการบังคับที่ตรวจจับได้ กับที่ควรเป็น */
+function checkControls(key, engine) {
+  const want = CONTROLS[key];
+  if (!want) return [`ยังไม่ได้ระบุการบังคับของ “${key}” ในตาราง CONTROLS`];
+  const got = engine.controls();
+  const gotKeys = Object.keys(got.keys || {}).sort().join(',');
+  const wantKeys = want.keys.slice().sort().join(',');
+  const out = [];
+  if (gotKeys !== wantKeys) out.push(`ปุ่มที่ตรวจได้ [${gotKeys || '—'}] ไม่ตรงกับที่ควรเป็น [${wantKeys || '—'}]`);
+  if (!!got.pointer !== want.pointer) out.push(`การบังคับด้วยเมาส์ตรวจได้ ${!!got.pointer} ควรเป็น ${want.pointer}`);
+  if (!!got.tap !== want.tap) out.push(`การแตะบนเวทีตรวจได้ ${!!got.tap} ควรเป็น ${want.tap}`);
+  return out;
+}
+
 function play(key, code, pilot, maxFrames) {
   const logs = [];
   let ended = null;
@@ -53,6 +67,7 @@ function play(key, code, pilot, maxFrames) {
     restart() {},
   });
   const built = engine.build(code);
+  const controlProblems = checkControls(key, engine);
   engine.start();
   const st = engine.state();
   let t = 0, frames = 0;
@@ -63,7 +78,7 @@ function play(key, code, pilot, maxFrames) {
     cb(t);
     if (!st.running) break;
   }
-  return { built, logs, ended, frames, state: st };
+  return { built, logs, ended, frames, state: st, controlProblems };
 }
 
 const nearest = (from, list) =>
@@ -134,6 +149,17 @@ const PILOTS = {
 };
 
 /* ---------- สิ่งที่แต่ละเกมต้องทำได้ ---------- */
+/* การบังคับที่แต่ละเกมต้องใช้ หน้าจอสร้างปุ่มจากข้อมูลนี้
+   ถ้าตารางนี้เพี้ยน ผู้เล่นบนมือถือจะได้ปุ่มผิดหรือไม่ได้ปุ่มเลย */
+const CONTROLS = {
+  platformer: { keys: ['ArrowLeft', 'ArrowRight', 'Space'], pointer: false, tap: false },
+  shooter:    { keys: ['ArrowLeft', 'ArrowRight', 'Space'], pointer: false, tap: false },
+  collector:  { keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'], pointer: false, tap: false },
+  breakout:   { keys: [], pointer: true, tap: false },
+  clicker:    { keys: [], pointer: false, tap: true },
+  survivor:   { keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'], pointer: true, tap: true },
+};
+
 const EXPECT = {
   platformer: { frames: 3000, minScore: 10, survive: ['พื้น', 'แท่น'],
                 note: 'กระโดดขึ้นแท่นเก็บเหรียญได้ และฉากต้องไม่ร่วงตามแรงโน้มถ่วง' },
@@ -166,6 +192,7 @@ for (const key of Object.keys(TEMPLATES)) {
   const problems = [];
 
   if (!run.built) problems.push('เอนจินสร้างเกมจากโค้ดไม่สำเร็จ');
+  for (const p of run.controlProblems) problems.push(p);
   if (errors.length) problems.push(`มีข้อผิดพลาดขณะเล่น ${errors.length} ครั้ง`);
   if (score < want.minScore) problems.push(`คะแนน ${score} ต่ำกว่าที่ควรได้ ${want.minScore} (${want.note})`);
   if (want.win && (!run.ended || run.ended.result !== 'win')) problems.push('เล่นจนจบแล้วไม่ชนะ');
@@ -182,5 +209,48 @@ for (const key of Object.keys(TEMPLATES)) {
   if (problems.length) failed++;
 }
 
-console.log(failed ? `\nไม่ผ่าน ${failed} เกม` : '\nผ่านครบทุกเกม');
+/* ---------- เล่นด้วยปุ่มบนหน้าจอ ----------
+   ไม่แตะ st.keys เลย ใช้ engine.press/release อย่างเดียว
+   ซึ่งเป็นทางเดียวกับที่ปุ่มบังคับบนมือถือใช้ */
+console.log('\nเล่นด้วยปุ่มบนหน้าจอ (ไม่ใช้คีย์บอร์ด)');
+{
+  const { code } = compile('platformer');
+  const logs = [];
+  const engine = createEngine(canvasStub(), { log: (m, l) => logs.push({ level: l || 'info', m }), ended() {}, restart() {} });
+  engine.build(code);
+  engine.start();
+  const st = engine.state();
+  const held = {};
+  const hold = (k, want) => {
+    if (want === !!held[k]) return;
+    held[k] = want;
+    if (want) engine.press(k); else engine.release(k);
+  };
+  let t = 0, frames = 0;
+  while (rafCallback && frames < 3000) {
+    frames++; t += 1000 / 60;
+    const p = alive(st, 'ผู้เล่น')[0];
+    if (p) {
+      const foe = nearest(p, alive(st, 'ศัตรู'));
+      const coin = nearest(p, alive(st, 'เหรียญ'));
+      const flee = foe && Math.abs(foe.x - p.x) < 85 && Math.abs(foe.y - p.y) < 60;
+      const goal = flee ? { x: foe.x > p.x ? 0 : 480, y: p.y } : coin;
+      hold('ArrowLeft', !!goal && goal.x < p.x - 6);
+      hold('ArrowRight', !!goal && goal.x > p.x + 6);
+      if (p.onGround && (flee || (coin && coin.y < p.y - 12))) engine.press('Space');
+      else engine.release('Space');
+    }
+    const cb = rafCallback; rafCallback = null;
+    cb(t);
+    if (!st.running) break;
+  }
+  const errors = logs.filter((l) => l.level === 'err');
+  const ok = st.score >= 10 && !errors.length;
+  if (!ok) failed++;
+  console.log(`${ok ? '✓' : '✗'} platformer  กดปุ่มบนหน้าจอ ${frames} เฟรม · คะแนน ${st.score}` +
+              (errors.length ? ` · ข้อผิดพลาด ${errors.length}` : ''));
+  if (!ok && st.score < 10) console.log('    ↳ กดผ่านปุ่มบนหน้าจอแล้วทำคะแนนไม่ได้ ผู้เล่นบนมือถือจะเล่นเกมนี้ไม่ได้');
+}
+
+console.log(failed ? `\nไม่ผ่าน ${failed} รายการ` : '\nผ่านครบทุกรายการ');
 process.exit(failed ? 1 : 0);

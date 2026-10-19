@@ -32,10 +32,10 @@
         <div class="sub">เรียง · ต่อ · ก่อ — ต่อบล็อกให้กลายเป็นเกม</div>
       </div>
     </div>
-    <button class="btn" id="btnHome" type="button">🏠 หน้าแรก</button>
-    <button class="btn" id="btnProject" type="button">💾 โปรเจกต์</button>
-    <button class="btn ghost" id="btnHelp" type="button">คู่มือ</button>
-    <button class="btn ghost" id="btnAbout" type="button">ลิขสิทธิ์</button>
+    <button class="btn" id="btnHome" type="button" title="หน้าแรก">🏠<span class="lbl">หน้าแรก</span></button>
+    <button class="btn" id="btnProject" type="button" title="โปรเจกต์">💾<span class="lbl">โปรเจกต์</span></button>
+    <button class="btn ghost" id="btnHelp" type="button" title="คู่มือใช้งาน">📘<span class="lbl">คู่มือ</span></button>
+    <button class="btn ghost" id="btnAbout" type="button" title="ที่มาและลิขสิทธิ์">⚖️<span class="lbl">ลิขสิทธิ์</span></button>
   </header>
 
   <nav class="viewtabs" aria-label="สลับมุมมอง">
@@ -47,11 +47,11 @@
     <section class="pane editorpane">
       <div class="panehead">
         <span class="label">ลานต่อบล็อก</span>
-        <button class="btn" id="btnNewSprite" type="button" title="เพิ่มชื่อตัวละครใหม่ให้เลือกในบล็อก">➕ ชื่อตัวละคร</button>
+        <button class="btn" id="btnNewSprite" type="button" title="เพิ่มชื่อตัวละครใหม่ให้เลือกในบล็อก">➕<span class="lbl">ชื่อตัวละคร</span></button>
         <button class="btn ghost" id="btnUndo" type="button" title="เลิกทำ">↶</button>
         <button class="btn ghost" id="btnRedo" type="button" title="ทำซ้ำ">↷</button>
-        <button class="btn ghost" id="btnTidy" type="button" title="จัดเรียงบล็อก">จัดเรียง</button>
-        <button class="btn ghost" id="btnClear" type="button" title="ล้างบล็อกทั้งหมด">ล้าง</button>
+        <button class="btn ghost" id="btnTidy" type="button" title="จัดเรียงบล็อก">⇲<span class="lbl">จัดเรียง</span></button>
+        <button class="btn ghost" id="btnClear" type="button" title="ล้างบล็อกทั้งหมด">🗑<span class="lbl">ล้าง</span></button>
       </div>
       <div id="blocklyDiv"></div>
     </section>
@@ -72,11 +72,19 @@
               <div><button class="btn primary" id="ovBtn" type="button">เล่นอีกครั้ง</button></div>
             </div>
           </div>
+          <div class="pad" id="pad" hidden>
+            <div class="pad-dir" id="padDir"></div>
+            <div class="pad-act" id="padAct"></div>
+          </div>
+          <p class="pad-hint" id="padHint" hidden></p>
           <div class="runbar">
             <button class="btn go" id="btnRun" type="button">▶ เล่น</button>
             <button class="btn stop" id="btnStop" type="button" disabled>■ หยุด</button>
+            <button class="btn ghost" id="btnPad" type="button" aria-pressed="false" title="แสดงหรือซ่อนปุ่มบังคับ">🎮</button>
+            <button class="btn ghost" id="btnFocus" type="button" title="เล่นแบบเต็มพื้นที่">⤢</button>
             <span class="spacer"></span>
-            <button class="btn ghost" id="btnClearLog" type="button">ล้างบันทึก</button>
+            <button class="btn ghost" id="btnLog" type="button" aria-expanded="true" title="แสดงหรือซ่อนบันทึก">บันทึก<span class="dot" id="logDot" hidden></span></button>
+            <button class="btn ghost" id="btnClearLog" type="button" title="ล้างบันทึก">ล้าง</button>
           </div>
           <div class="logbox" id="log" aria-live="polite"></div>
         </div>
@@ -86,6 +94,8 @@
     </section>
   </main>
 </div>
+
+<button class="focus-exit" id="btnFocusExit" type="button" hidden>⤡ ออกจากเต็มพื้นที่</button>
 
 <div class="start" id="start" hidden>
   <div class="start-card" role="dialog" aria-modal="true" aria-labelledby="startTitle">

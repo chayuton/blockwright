@@ -10,6 +10,8 @@
   var $ = function(id){ return document.getElementById(id); };
   var ws = null, engine = null, loading = false, booted = false, started = false;
   var tPreview = 0, tSave = 0, tToast = 0;
+  var PADKEY = 'blockwright.pad.v1';
+  var LOGKEY = 'blockwright.log.v1';
   var AUTOKEY = 'blockwright.autosave.v1';
   var SLOTKEY = 'blockwright.slot.v1';
 
@@ -58,6 +60,114 @@
     }catch(err){}
   }
 
+  /* ---------- ปุ่มบังคับบนหน้าจอ ----------
+     เอนจินบอกมาว่าเกมนี้ต้องใช้ปุ่มอะไร หน้าจอจึงสร้างเฉพาะปุ่มที่ใช้จริง
+     บนเครื่องที่ไม่มีคีย์บอร์ดก็เล่นได้ทุกเกมเหมือนกัน */
+  var FACE = {
+    ArrowLeft:'◀', ArrowRight:'▶', ArrowUp:'▲', ArrowDown:'▼',
+    a:'◀', d:'▶', w:'▲', s:'▼',
+    Space:'กด', Enter:'↵'
+  };
+  var CELL = {
+    ArrowUp:['1','2'], ArrowLeft:['2','1'], ArrowRight:['2','3'], ArrowDown:['3','2'],
+    w:['1','2'], a:['2','1'], d:['2','3'], s:['3','2']
+  };
+  var DIRS = ['ArrowUp','ArrowLeft','ArrowRight','ArrowDown','w','a','d','s'];
+  var NAMES = {
+    ArrowLeft:'ซ้าย', ArrowRight:'ขวา', ArrowUp:'ขึ้น', ArrowDown:'ลง',
+    a:'ซ้าย', d:'ขวา', w:'ขึ้น', s:'ลง', Space:'เว้นวรรค', Enter:'Enter'
+  };
+
+  function coarse(){
+    try{ return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); }
+    catch(err){ return false; }
+  }
+  function pref(key, dflt){
+    try{
+      var v = localStorage.getItem(key);
+      if(v === '1') return true;
+      if(v === '0') return false;
+    }catch(err){}
+    return dflt;
+  }
+  function setPref(key, on){
+    try{ localStorage.setItem(key, on ? '1' : '0'); }catch(err){}
+  }
+
+  function keyButton(k, big){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'key' + (big ? ' big' : '');
+    btn.textContent = big ? (FACE[k] || k) : (FACE[k] || k);
+    btn.setAttribute('aria-label', 'ปุ่ม' + (NAMES[k] || k));
+    btn.title = NAMES[k] || k;
+
+    function down(ev){
+      if(ev){
+        ev.preventDefault();
+        if(ev.pointerId != null){ try{ btn.setPointerCapture(ev.pointerId); }catch(err){} }
+      }
+      btn.classList.add('on');
+      engine.press(k);
+    }
+    function up(ev){
+      if(ev) ev.preventDefault();
+      btn.classList.remove('on');
+      engine.release(k);
+    }
+    btn.addEventListener('pointerdown', down);
+    btn.addEventListener('pointerup', up);
+    btn.addEventListener('pointercancel', up);
+    btn.addEventListener('keydown', function(ev){
+      if(ev.key === ' ' || ev.key === 'Enter'){ down(ev); }
+    });
+    btn.addEventListener('keyup', function(ev){
+      if(ev.key === ' ' || ev.key === 'Enter'){ up(ev); }
+    });
+    return btn;
+  }
+
+  function padShown(){ return pref(PADKEY, coarse()); }
+
+  function refreshPad(){
+    var need = engine ? engine.controls() : { keys:{}, pointer:false, tap:false };
+    var keys = Object.keys(need.keys || {});
+    var dirs = keys.filter(function(k){ return DIRS.indexOf(k) >= 0; });
+    var acts = keys.filter(function(k){ return DIRS.indexOf(k) < 0; });
+    var on = padShown();
+
+    $('btnPad').setAttribute('aria-pressed', String(on));
+    $('btnPad').disabled = !keys.length;
+
+    var dirBox = $('padDir'), actBox = $('padAct');
+    dirBox.innerHTML = ''; actBox.innerHTML = '';
+
+    var horizontalOnly = dirs.length > 0 && dirs.every(function(k){
+      return k === 'ArrowLeft' || k === 'ArrowRight' || k === 'a' || k === 'd';
+    });
+    dirBox.className = 'pad-dir' + (horizontalOnly ? ' row' : ' four');
+
+    dirs.forEach(function(k){
+      var b = keyButton(k, false);
+      if(!horizontalOnly && CELL[k]){
+        b.style.gridRow = CELL[k][0];
+        b.style.gridColumn = CELL[k][1];
+      }
+      dirBox.appendChild(b);
+    });
+    acts.forEach(function(k, i){
+      actBox.appendChild(keyButton(k, i === 0));
+    });
+
+    $('pad').hidden = !(on && keys.length);
+
+    var hints = [];
+    if(need.pointer) hints.push('ลากนิ้วหรือเมาส์บนเวทีเพื่อบังคับ');
+    if(need.tap) hints.push('แตะหรือคลิกบนเวทีเพื่อเล่น');
+    $('padHint').textContent = hints.join(' · ');
+    $('padHint').hidden = !hints.length;
+  }
+
   /* ---------- บันทึกข้อความลงกล่องข้อความ ---------- */
   function log(msg, lvl){
     var box = $('log');
@@ -67,6 +177,17 @@
     box.appendChild(line);
     while(box.childNodes.length > 60) box.removeChild(box.firstChild);
     box.scrollTop = box.scrollHeight;
+    /* บันทึกถูกพับเก็บอยู่ ถ้ามีคำเตือนหรือข้อผิดพลาดให้ขึ้นจุดแดงบนปุ่ม */
+    if(box.hidden && (lvl === 'err' || lvl === 'warn')) $('logDot').hidden = false;
+  }
+  function showLog(on){
+    $('log').hidden = !on;
+    $('btnClearLog').hidden = !on;
+    $('btnLog').setAttribute('aria-expanded', String(on));
+    if(on){
+      $('logDot').hidden = true;
+      $('log').scrollTop = $('log').scrollHeight;
+    }
   }
   function toast(msg){
     var el = document.querySelector('.toast');
@@ -199,6 +320,7 @@
     if(!engine.build(code)){ setRunning(false); return; }
     engine.start();
     setRunning(true);
+    refreshPad();
     log('เริ่มเล่นแล้ว', 'ok');
     refreshSprites();
     showView('stage');
@@ -213,6 +335,7 @@
     if(engine.isRunning()) return;
     var code = refreshCode();
     engine.build(code);
+    refreshPad();
     refreshSprites();
   }
   function schedulePreview(){ clearTimeout(tPreview); tPreview = setTimeout(preview, 450); }
@@ -391,6 +514,27 @@
     $('pExport').onclick = function(){ copyText(standaloneHTML(), 'คัดลอกไฟล์เกมแล้ว — วางในโปรแกรมแก้ไขข้อความ บันทึกเป็น .html'); };
   }
 
+  /* ---------- โหมดเต็มพื้นที่ ----------
+     ซ่อนแถบบน แท็บ และบันทึก เหลือเวทีกับปุ่มบังคับ
+     ทำให้จอเล็กและโทรศัพท์แนวนอนเล่นได้สบาย */
+  function setFocus(on){
+    var app = document.querySelector('.app');
+    if(!app) return;
+    if(on){
+      app.classList.add('focused');
+      showView('stage');
+      showTab('play');
+    } else {
+      app.classList.remove('focused');
+    }
+    $('btnFocusExit').hidden = !on;
+    if(ws) setTimeout(function(){ Blockly.svgResize(ws); }, 40);
+  }
+  function inFocus(){
+    var app = document.querySelector('.app');
+    return !!(app && app.classList.contains('focused'));
+  }
+
   /* ---------- แท็บและมุมมอง ---------- */
   function showView(which){
     $('work').setAttribute('data-view', which);
@@ -520,7 +664,20 @@
     $('btnRun').onclick = run;
     $('btnStop').onclick = stop;
     $('ovBtn').onclick = run;
-    $('btnClearLog').onclick = function(){ $('log').innerHTML = ''; };
+    $('btnClearLog').onclick = function(){ $('log').innerHTML = ''; $('logDot').hidden = true; };
+    $('btnPad').onclick = function(){
+      var next = !padShown();
+      setPref(PADKEY, next);
+      refreshPad();
+      toast(next ? 'แสดงปุ่มบังคับบนหน้าจอ' : 'ซ่อนปุ่มบังคับแล้ว');
+    };
+    $('btnLog').onclick = function(){
+      var next = $('log').hidden;
+      setPref(LOGKEY, next);
+      showLog(next);
+    };
+    $('btnFocus').onclick = function(){ setFocus(true); };
+    $('btnFocusExit').onclick = function(){ setFocus(false); };
     $('btnUndo').onclick = function(){ ws.undo(false); };
     $('btnRedo').onclick = function(){ ws.undo(true); };
     $('btnTidy').onclick = function(){ try{ ws.cleanUp(); }catch(err){} };
@@ -547,6 +704,7 @@
       if(!$('ask').hidden) askClose(false);
       else if(!$('sheet').hidden) closeSheet();
       else if(!$('start').hidden && !$('startClose').hidden) closeStart();
+      else if(inFocus()) setFocus(false);
     });
 
     $('tabPlay').onclick = function(){ showTab('play'); };
@@ -555,7 +713,13 @@
     $('vtBlocks').onclick = function(){ showView('blocks'); };
     $('vtStage').onclick = function(){ showView('stage'); };
 
-    window.addEventListener('resize', function(){ if(ws) Blockly.svgResize(ws); });
+    window.addEventListener('resize', function(){
+      if(ws) Blockly.svgResize(ws);
+      if(engine && !engine.isRunning()) engine.draw();
+    });
+    window.addEventListener('orientationchange', function(){
+      setTimeout(function(){ if(ws) Blockly.svgResize(ws); }, 220);
+    });
     if(window.matchMedia){
       var mq = window.matchMedia('(prefers-color-scheme: dark)');
       if(mq.addEventListener) mq.addEventListener('change', applyTheme);
@@ -568,6 +732,7 @@
     setRunning(false);
     showTab('play');
     showView('blocks');
+    showLog(pref(LOGKEY, !coarse()));
 
     if(data && data.ws){
       /* กลับมาจากการอัปเดตหน้าเว็บระหว่างใช้งาน ทำงานต่อได้เลย */
@@ -578,6 +743,7 @@
       preview();
       showStart(false);
       log('เลือกจากหน้าแรกว่าจะเริ่มใหม่ เรียกตัวอย่าง หรือแก้ไขงานเดิม', 'ok');
+      if(coarse()) log('ไม่มีคีย์บอร์ดก็เล่นได้ ปุ่มบังคับจะขึ้นใต้เวทีตามที่เกมต้องใช้', 'ok');
     }
 
     var hot = window.claude && window.claude.hot;

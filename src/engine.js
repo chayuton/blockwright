@@ -19,6 +19,7 @@
         keys:{}, keyQueue:[], clickQueue:[],
         mouse:{ x:W/2, y:H/2 },
         h:{ start:[], tick:[], key:{}, click:{}, stage:[], collide:[], edge:{}, timeout:[], every:[], after:[] },
+        need:{ keys:{}, pointer:false, tap:false },
         solids:[], running:false, over:null, errors:0
       };
     }
@@ -413,9 +414,42 @@
       draw();
     }
 
+    /* ---------- ตรวจว่าเกมนี้ต้องบังคับด้วยอะไร ----------
+       อ่านจากข้อความโค้ดที่บล็อกแปลงออกมา จึงรู้ผลก่อนเริ่มเล่น
+       หน้าจอนำไปสร้างปุ่มบังคับให้ตรงกับเกม ไม่ขึ้นปุ่มที่เกมไม่ได้ใช้ */
+    var RE_KEY = /G\.(?:onKey|keyDown)\("((?:[^"\\]|\\.)*)"/g;
+    var RE_MOVE = /G\.moveWith\("(?:[^"\\]|\\.)*",\s*"([a-z]+)"/g;
+    var MODE_KEYS = {
+      arrows:['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'],
+      lr:['ArrowLeft','ArrowRight'],
+      ud:['ArrowUp','ArrowDown'],
+      wasd:['a','d','w','s']
+    };
+    function scanControls(code){
+      var need = { keys:{}, pointer:false, tap:false }, m, i, ks;
+      code = String(code || '');
+
+      RE_KEY.lastIndex = 0;
+      while((m = RE_KEY.exec(code))){
+        try{ need.keys[JSON.parse('"' + m[1] + '"')] = true; }catch(err){}
+      }
+
+      RE_MOVE.lastIndex = 0;
+      while((m = RE_MOVE.exec(code))){
+        ks = MODE_KEYS[m[1]];
+        if(ks){ for(i = 0; i < ks.length; i++) need.keys[ks[i]] = true; }
+        else if(m[1] === 'mouse' || m[1] === 'mousex') need.pointer = true;
+      }
+
+      if(/G\.pointMouse\(/.test(code)) need.pointer = true;
+      if(/G\.onStageClick\(|G\.onClick\(/.test(code)) need.tap = true;
+      return need;
+    }
+
     /* ---------- สร้างเกมจากโค้ด ---------- */
     function build(code){
       stop(); reset();
+      S.need = scanControls(code);
       var fn;
       try{ fn = new Function('G', '"use strict";\nvar me = null, other = null;\n' + code); }
       catch(err){ log('โค้ดจากบล็อกยังไม่สมบูรณ์ — ' + err.message, 'err'); draw(); return false; }
@@ -458,7 +492,11 @@
 
     return { build:build, start:start, stop:stop, draw:draw,
              isRunning:function(){ return S.running; },
-             state:function(){ return S; } };
+             state:function(){ return S; },
+             controls:function(){ return S.need; },
+             /* ปุ่มบังคับบนหน้าจอเรียกสองตัวนี้ ให้ผลเหมือนกดคีย์บอร์ดจริง */
+             press:function(k){ if(!S.keys[k]) S.keyQueue.push(k); S.keys[k] = true; },
+             release:function(k){ S.keys[k] = false; } };
   }
 
   BW.createEngine = createEngine;

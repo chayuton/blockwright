@@ -84,6 +84,7 @@ body{
   display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
   transition:background .12s, border-color .12s, transform .08s;
 }
+.btn .lbl{display:inline}
 .btn:hover{background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent) 35%, var(--line))}
 .btn:active{transform:translateY(1px)}
 .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
@@ -138,9 +139,19 @@ select.picker:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 .stagetabs .tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 .stagebody{flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden}
 .playwrap{flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; padding:10px}
-.canvasbox{position:relative; width:100%; border-radius:var(--r-sm); overflow:hidden;
-  background:var(--sunken); border:1px solid var(--line-2)}
-canvas#cv{display:block; width:100%; max-width:100%; aspect-ratio:4/3; touch-action:none}
+.canvasbox{
+  position:relative; flex:1 1 auto; min-height:0;
+  display:grid; justify-items:center; align-content:center;
+  border-radius:var(--r-sm); overflow:hidden;
+  background:var(--sunken); border:1px solid var(--line-2);
+}
+/* เวทีย่อเองให้พอดีทั้งความกว้างและความสูงที่เหลือ โดยคงสัดส่วน 4:3 */
+canvas#cv{
+  display:block; grid-area:1/1;
+  width:auto; height:auto; max-width:100%; max-height:100%;
+  aspect-ratio:4/3; touch-action:none;
+}
+.overlay{grid-area:1/1}
 .overlay{
   position:absolute; inset:0; display:grid; place-content:center; gap:10px; text-align:center;
   background:color-mix(in srgb, var(--sunken) 82%, transparent); backdrop-filter:blur(2px);
@@ -151,7 +162,7 @@ canvas#cv{display:block; width:100%; max-width:100%; aspect-ratio:4/3; touch-act
 .runbar{display:flex; align-items:center; gap:7px; flex-wrap:wrap}
 .runbar .spacer{margin-left:auto}
 .logbox{
-  flex:1; min-height:64px; overflow:auto; border:1px solid var(--line-2); border-radius:var(--r-sm);
+  flex:0 0 auto; height:96px; overflow:auto; border:1px solid var(--line-2); border-radius:var(--r-sm);
   background:var(--sunken); padding:7px 9px; font-family:var(--f-mono); font-size:11.5px; line-height:1.65;
   color:var(--ink-2); white-space:pre-wrap; word-break:break-word;
 }
@@ -176,12 +187,15 @@ canvas#cv{display:block; width:100%; max-width:100%; aspect-ratio:4/3; touch-act
 .empty{color:var(--ink-3); font-size:13px; padding:10px; text-align:center}
 
 /* ---------- sheet (help / project / about) ---------- */
+/* ===== ชั้นซ้อนของหน้าจอ =====
+   Blockly ตั้งชั้นของตัวเองไว้สูง กล่องเครื่องมืออยู่ที่ 70 ส่วนช่องแก้ค่าในบล็อก
+   อยู่ถึง 100000 แผ่นทับของเราจึงต้องสูงกว่านั้น ไม่งั้นจะกดทะลุลงไปโดนบล็อกข้างหลัง */
 .sheet{
-  position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:16px;
+  position:fixed; inset:0; z-index:100600; display:grid; place-items:center; padding:16px;
   background:color-mix(in srgb, #0a0c11 55%, transparent);
 }
 .sheet-card{
-  width:min(640px,100%); max-height:min(80vh,620px); overflow:auto;
+  width:min(640px,100%); max-height:min(80dvh,620px); overflow:auto;
   background:var(--panel); border:1px solid var(--line); border-radius:var(--r);
   box-shadow:var(--shadow); padding:18px;
 }
@@ -215,9 +229,69 @@ table.lic th,table.lic td{text-align:left; padding:6px 8px; border-bottom:1px so
 table.lic th{font:600 11px/1 var(--f-display); letter-spacing:.07em; text-transform:uppercase; color:var(--ink-3)}
 table.lic td:last-child{font-family:var(--f-mono); font-size:11.5px; white-space:nowrap; color:var(--ink-2)}
 
+/* ---------- ปุ่มบังคับบนหน้าจอ ---------- */
+.pad{
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  flex:none; user-select:none; -webkit-user-select:none;
+}
+.pad-dir{display:grid; gap:6px}
+.pad-dir.four{grid-template-columns:repeat(3, 48px); grid-template-rows:repeat(3, 42px)}
+.pad-dir.row{grid-template-columns:repeat(2, 68px); grid-template-rows:46px}
+.pad-act{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+.key{
+  display:grid; place-items:center; cursor:pointer; touch-action:none;
+  font-family:var(--f-body); font-size:17px; font-weight:600;
+  border:1px solid var(--line); border-radius:10px;
+  background:var(--panel-2); color:var(--ink);
+  min-width:44px; min-height:42px; padding:0;
+  transition:background .08s, transform .06s;
+}
+.key:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.key.on{background:var(--accent); border-color:var(--accent); color:var(--on-accent); transform:scale(.95)}
+.key.big{
+  min-width:74px; min-height:74px; border-radius:50%; font-size:13px; line-height:1.2;
+  background:var(--accent-soft); border-color:color-mix(in srgb, var(--accent) 38%, var(--line));
+  color:var(--accent); font-weight:700; padding:4px;
+}
+.key.big.on{background:var(--accent); color:var(--on-accent); border-color:var(--accent)}
+.pad-hint{
+  flex:none; margin:0; font-size:12px; line-height:1.5; color:var(--ink-3); text-align:center;
+}
+.btn .dot{
+  width:7px; height:7px; border-radius:50%; background:var(--stop);
+  display:inline-block; margin-left:5px; vertical-align:middle;
+}
+
+/* ---------- โหมดเต็มพื้นที่ ---------- */
+.focus-exit{
+  position:fixed; z-index:500; cursor:pointer;
+  top:calc(8px + env(safe-area-inset-top, 0px));
+  right:calc(10px + env(safe-area-inset-right, 0px));
+  font-family:var(--f-body); font-size:12px; font-weight:600;
+  border:1px solid var(--line); border-radius:999px; padding:7px 13px;
+  background:var(--panel); color:var(--ink-2); box-shadow:var(--shadow);
+}
+.focus-exit:hover{color:var(--ink)}
+.focus-exit:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.app.focused{padding-block:0; padding-left:0; padding-right:0; gap:0}
+.app.focused .topbar,
+.app.focused .viewtabs,
+.app.focused .editorpane,
+.app.focused .stagepane .panehead,
+.app.focused .logbox,
+.app.focused #btnLog,
+.app.focused #btnClearLog{display:none}
+.app.focused .work{grid-template-columns:1fr; gap:0}
+.app.focused .pane{border:none; border-radius:0; box-shadow:none}
+.app.focused .playwrap{
+  padding-block:calc(10px + env(safe-area-inset-top, 0px)) 10px;
+  padding-left:max(10px, env(safe-area-inset-left, 0px));
+  padding-right:max(10px, env(safe-area-inset-right, 0px));
+}
+
 /* ---------- หน้าแรก ---------- */
 .start{
-  position:fixed; inset:0; z-index:30; overflow:auto;
+  position:fixed; inset:0; z-index:100500; overflow:auto;
   display:flex; justify-content:center; align-items:flex-start;
   padding-block:24px;
   padding-left:max(16px, env(safe-area-inset-left, 0px));
@@ -226,7 +300,7 @@ table.lic td:last-child{font-family:var(--f-mono); font-size:11.5px; white-space
   backdrop-filter:blur(8px);
 }
 .start-card{
-  width:min(680px, 100%); margin-block:auto;
+  width:min(680px, 100%); margin-block:auto; max-height:none;
   background:var(--panel); border:1px solid var(--line); border-radius:16px;
   box-shadow:var(--shadow); padding:22px;
 }
@@ -273,12 +347,12 @@ table.lic td:last-child{font-family:var(--f-mono); font-size:11.5px; white-space
   .start-card{padding:18px}
 }
 
-/* กล่องถามชื่อต้องอยู่เหนือแผ่นข้อมูลและหน้าแรกเสมอ */
-#ask{z-index:60}
+/* กล่องถามชื่อต้องอยู่เหนือทุกอย่าง เพราะ Blockly เรียกใช้ตอนเปลี่ยนชื่อตัวแปร */
+#ask{z-index:100800}
 
 /* ---------- toast ---------- */
 .toast{
-  position:fixed; z-index:60;
+  position:fixed; z-index:100900;
   left:50%; transform:translateX(-50%);
   bottom:calc(18px + env(safe-area-inset-bottom, 0px));
   background:var(--ink); color:var(--bg); font-size:13px; font-weight:500;
@@ -292,6 +366,63 @@ table.lic td:last-child{font-family:var(--f-mono); font-size:11.5px; white-space
   .viewtabs{display:flex}
   .work[data-view="blocks"] .stagepane{display:none}
   .work[data-view="stage"] .editorpane{display:none}
+}
+
+/* แท็บเล็ตและจอแคบ: ปุ่มเหลือไอคอน ประหยัดที่ให้ชื่อโปรแกรมและเวที */
+@media (max-width:780px){
+  .btn .lbl{display:none}
+  .topbar{padding:7px 8px; gap:7px}
+  .brand h1{font-size:15.5px}
+  .brand .mark{width:26px; height:26px}
+  .panehead{gap:5px}
+}
+
+/* จอแคบมาก เช่น 320px: ซ่อนชื่อโปรแกรม ให้ปุ่มทั้งหมดอยู่แถวเดียว */
+@media (max-width:430px){
+  .brand h1{display:none}
+  .brand{margin-right:auto; gap:0}
+  .topbar{gap:6px}
+  .btn{padding:7px 9px}
+}
+
+/* โทรศัพท์แนวตั้ง */
+@media (max-width:560px){
+  body{font-size:13.5px}
+  .app{padding-block:8px; gap:8px}
+  .playwrap{padding:8px; gap:7px}
+  .logbox{height:76px; font-size:11px}
+  .stagetabs .tab{padding:5px 9px}
+  .pad-dir.four{grid-template-columns:repeat(3, 46px); grid-template-rows:repeat(3, 40px)}
+  .pad{gap:10px}
+}
+
+/* จอเตี้ย เช่น โทรศัพท์แนวนอน: บีบส่วนประกอบรอบเวทีให้เล็กลง */
+@media (max-height:640px){
+  .logbox{height:56px}
+}
+@media (max-height:640px) and (orientation:landscape){
+  .pad-dir.four{grid-template-columns:repeat(3, 44px); grid-template-rows:repeat(3, 34px)}
+  .key.big{min-width:62px; min-height:62px}
+  .logbox{height:46px}
+}
+/* โทรศัพท์แนวนอนในโหมดเต็มพื้นที่: วางปุ่มบังคับไว้ข้างเวที
+   ความสูงทั้งจอจึงเป็นของเวทีเกือบหมด */
+@media (orientation:landscape) and (max-height:620px){
+  .app.focused .playwrap{flex-direction:row; align-items:center; gap:10px}
+  /* คลายกล่องปุ่มออก เพื่อวางแป้นทิศทางไว้ซ้ายมือ และปุ่มกดไว้ขวามือ
+     จับสองมือได้เหมือนเครื่องเล่นเกมพกพา */
+  .app.focused .pad{display:contents}
+  .app.focused .pad-dir{order:1; flex:none}
+  .app.focused .canvasbox{order:2; min-width:0}
+  .app.focused .pad-act{order:3; flex:none; flex-direction:column; justify-content:center}
+  .app.focused .runbar{order:4; flex:none; flex-direction:column; align-items:stretch; gap:6px}
+  .app.focused .pad-hint{display:none}
+  .app.focused .runbar .spacer{display:none}
+}
+
+/* เมาส์จริงไม่ต้องมีปุ่มบังคับบนหน้าจอโดยปริยาย แต่ยังเปิดดูได้ */
+@media (hover:hover) and (pointer:fine){
+  .key{min-height:38px}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms !important; transition-duration:.01ms !important}
