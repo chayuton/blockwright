@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blockwright</title>
+<meta name="description" content="เครื่องมือสร้างเกมด้วยการต่อบล็อกภาษาไทย — เรียง · ต่อ · ก่อ">
+<meta name="theme-color" content="#e6e9f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a3ad1' stroke-width='2.4' stroke-linejoin='round'%3E%3Crect x='2.5' y='13.5' width='8.5' height='6.5' rx='1.2'/%3E%3Crect x='13' y='13.5' width='8.5' height='6.5' rx='1.2'/%3E%3Crect x='7.75' y='4.5' width='8.5' height='6.5' rx='1.2'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="2.5" y="13.5" width="8.5" height="6.5" rx="1.2"/>
+          <rect x="13" y="13.5" width="8.5" height="6.5" rx="1.2"/>
+          <rect x="7.75" y="4.5" width="8.5" height="6.5" rx="1.2"/>
+        </svg>
+      </div>
+      <div style="min-width:0">
+        <h1>Blockwright</h1>
+        <div class="sub">เรียง · ต่อ · ก่อ — ต่อบล็อกให้กลายเป็นเกม</div>
+      </div>
+    </div>
+    <select class="picker" id="tplPicker" aria-label="เลือกเกมตัวอย่าง">
+      <option value="">เกมตัวอย่าง…</option>
+    </select>
+    <button class="btn" id="btnProject" type="button">💾 โปรเจกต์</button>
+    <button class="btn ghost" id="btnHelp" type="button">คู่มือ</button>
+    <button class="btn ghost" id="btnAbout" type="button">ลิขสิทธิ์</button>
+  </header>
+
+  <nav class="viewtabs" aria-label="สลับมุมมอง">
+    <button class="btn" type="button" id="vtBlocks" aria-pressed="true">🧩 บล็อก</button>
+    <button class="btn" type="button" id="vtStage" aria-pressed="false">🎮 เวที</button>
+  </nav>
+
+  <main class="work" id="work" data-view="blocks">
+    <section class="pane editorpane">
+      <div class="panehead">
+        <span class="label">ลานต่อบล็อก</span>
+        <button class="btn" id="btnNewSprite" type="button" title="เพิ่มชื่อตัวละครใหม่ให้เลือกในบล็อก">➕ ชื่อตัวละคร</button>
+        <button class="btn ghost" id="btnUndo" type="button" title="เลิกทำ">↶</button>
+        <button class="btn ghost" id="btnRedo" type="button" title="ทำซ้ำ">↷</button>
+        <button class="btn ghost" id="btnTidy" type="button" title="จัดเรียงบล็อก">จัดเรียง</button>
+        <button class="btn ghost" id="btnClear" type="button" title="ล้างบล็อกทั้งหมด">ล้าง</button>
+      </div>
+      <div id="blocklyDiv"></div>
+    </section>
+
+    <section class="pane stagepane">
+      <div class="panehead stagetabs" role="tablist" aria-label="มุมมองเวที">
+        <button class="tab" type="button" role="tab" id="tabPlay" aria-selected="true" aria-controls="viewPlay">เล่น</button>
+        <button class="tab" type="button" role="tab" id="tabSprites" aria-selected="false" aria-controls="viewSprites">ตัวละคร</button>
+        <button class="tab" type="button" role="tab" id="tabCode" aria-selected="false" aria-controls="viewCode">โค้ด</button>
+      </div>
+      <div class="stagebody">
+        <div class="playwrap" id="viewPlay" role="tabpanel" aria-labelledby="tabPlay">
+          <div class="canvasbox">
+            <canvas id="cv" width="480" height="360" aria-label="เวทีเกม"></canvas>
+            <div class="overlay" id="overlay" hidden>
+              <p class="big" id="ovTitle">พร้อมเล่น</p>
+              <p class="small" id="ovText"></p>
+              <div><button class="btn primary" id="ovBtn" type="button">เล่นอีกครั้ง</button></div>
+            </div>
+          </div>
+          <div class="runbar">
+            <button class="btn go" id="btnRun" type="button">▶ เล่น</button>
+            <button class="btn stop" id="btnStop" type="button" disabled>■ หยุด</button>
+            <span class="spacer"></span>
+            <button class="btn ghost" id="btnClearLog" type="button">ล้างบันทึก</button>
+          </div>
+          <div class="logbox" id="log" aria-live="polite"></div>
+        </div>
+        <pre class="codeview" id="viewCode" role="tabpanel" aria-labelledby="tabCode" hidden></pre>
+        <div class="spriteview" id="viewSprites" role="tabpanel" aria-labelledby="tabSprites" hidden></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="sheet" id="ask" hidden>
+  <div class="sheet-card ask-card" role="dialog" aria-modal="true" aria-labelledby="askMsg">
+    <p class="ask-msg" id="askMsg"></p>
+    <input class="ask-input" type="text" id="askInput" autocomplete="off" spellcheck="false">
+    <div class="rowbtns">
+      <button class="btn primary" type="button" id="askOk">ตกลง</button>
+      <button class="btn" type="button" id="askCancel">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-card" id="sheetCard" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head">
+      <h2 id="sheetTitle">หัวข้อ</h2>
+      <button class="btn ghost" id="sheetClose" type="button" aria-label="ปิด">✕</button>
+    </div>
+    <div id="sheetBody"></div>
+  </div>
+</div>
+
+<!-- Blockly 13.3.0 (Google, Apache-2.0)
+     ถ้าต้องการใช้สำเนาในเครื่องแทน CDN ให้รัน `npm run vendor:blockly`
+     แล้วเปลี่ยนสอง src ข้างล่างเป็น vendor/blockly/blockly.min.js และ vendor/blockly/msg/th.js -->
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.3.0/blockly.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.3.0/msg/th.js"></script>
+
+<script src="src/blocks.js"></script>
+<script src="src/generators.js"></script>
+<script src="src/engine.js"></script>
+<script src="src/templates.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>

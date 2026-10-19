@@ -1,0 +1,28 @@
+Blockwright
+Copyright (c) 2026 Blockwright contributors
+โค้ดในโฟลเดอร์ src/ scripts/ และ test/ เผยแพร่ภายใต้สัญญาอนุญาต MIT (ดูไฟล์ LICENSE)
+
+ซอฟต์แวร์นี้ใช้งานและเผยแพร่ซ้ำผลงานของผู้อื่นดังนี้
+
+--------------------------------------------------------------------------------
+Blockly
+Copyright Google LLC
+SPDX-License-Identifier: Apache-2.0
+https://github.com/google/blockly
+
+ใช้เป็นตัวแก้ไขแบบบล็อกและตัวแปลงบล็อกเป็น JavaScript โดยโหลดจาก CDN ขณะเปิดหน้าเว็บ
+ไฟล์ไอคอนใน vendor/blockly-media/ เป็นสำเนาจากโฟลเดอร์ media ของ Blockly ที่เผยแพร่ซ้ำมาพร้อมโปรเจกต์นี้
+สำเนาสัญญาอนุญาตฉบับเต็มอยู่ที่ vendor/blockly-media/LICENSE.txt
+
+--------------------------------------------------------------------------------
+IBM Plex Sans Thai และ IBM Plex Mono
+Copyright IBM Corp.
+SIL Open Font License 1.1
+https://github.com/IBM/plex
+
+Chakra Petch
+Copyright Cadson Demak
+SIL Open Font License 1.1
+https://github.com/cadsondemak/chakra-petch
+
+แบบอักษรทั้งสามโหลดจาก Google Fonts ขณะเปิดหน้าเว็บ ไม่ได้เผยแพร่ซ้ำมาในรีโปนี้

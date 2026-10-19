@@ -1,0 +1,7 @@
+node_modules/
+.vercel/
+.DS_Store
+*.log
+
+# สร้างใหม่ได้ด้วย npm run vendor:blockly จึงไม่ต้องคอมมิต
+vendor/blockly/

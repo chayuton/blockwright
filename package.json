@@ -1,0 +1,16 @@
+{
+  "name": "blockwright",
+  "version": "1.0.0",
+  "private": true,
+  "description": "เครื่องมือสร้างเกมด้วยการต่อบล็อก — เรียง · ต่อ · ก่อ",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "test": "node test/run.mjs",
+    "vendor:blockly": "node scripts/vendor-blockly.mjs"
+  },
+  "devDependencies": {
+    "blockly": "13.3.0",
+    "jsdom": "^29.1.1"
+  }
+}
