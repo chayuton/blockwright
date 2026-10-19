@@ -32,9 +32,7 @@
         <div class="sub">เรียง · ต่อ · ก่อ — ต่อบล็อกให้กลายเป็นเกม</div>
       </div>
     </div>
-    <select class="picker" id="tplPicker" aria-label="เลือกเกมตัวอย่าง">
-      <option value="">เกมตัวอย่าง…</option>
-    </select>
+    <button class="btn" id="btnHome" type="button">🏠 หน้าแรก</button>
     <button class="btn" id="btnProject" type="button">💾 โปรเจกต์</button>
     <button class="btn ghost" id="btnHelp" type="button">คู่มือ</button>
     <button class="btn ghost" id="btnAbout" type="button">ลิขสิทธิ์</button>
@@ -87,6 +85,57 @@
       </div>
     </section>
   </main>
+</div>
+
+<div class="start" id="start" hidden>
+  <div class="start-card" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+    <div class="start-head">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="2.5" y="13.5" width="8.5" height="6.5" rx="1.2"/>
+          <rect x="13" y="13.5" width="8.5" height="6.5" rx="1.2"/>
+          <rect x="7.75" y="4.5" width="8.5" height="6.5" rx="1.2"/>
+        </svg>
+      </div>
+      <div style="min-width:0">
+        <h2 id="startTitle">Blockwright</h2>
+        <p>เรียง · ต่อ · ก่อ — ต่อบล็อกให้กลายเป็นเกม</p>
+      </div>
+      <button class="btn ghost" id="startClose" type="button" hidden>กลับไปทำต่อ</button>
+    </div>
+
+    <div id="startMain">
+      <div class="tiles">
+        <button class="tile" id="optNew" type="button">
+          <span class="tile-icon" aria-hidden="true">✨</span>
+          <span class="tile-title">เริ่มใหม่</span>
+          <span class="tile-sub">ลานบล็อกเปล่า ต่อเองตั้งแต่ต้น</span>
+        </button>
+        <button class="tile" id="optSample" type="button">
+          <span class="tile-icon" aria-hidden="true">🎮</span>
+          <span class="tile-title">เรียกตัวอย่าง</span>
+          <span class="tile-sub">เปิดเกมสำเร็จรูป แล้วรื้อแก้ต่อได้</span>
+        </button>
+        <button class="tile" id="optResume" type="button">
+          <span class="tile-icon" aria-hidden="true">📂</span>
+          <span class="tile-title">แก้ไขเดิม</span>
+          <span class="tile-sub" id="optResumeSub">ยังไม่มีงานที่บันทึกไว้</span>
+        </button>
+      </div>
+      <div class="start-foot">
+        <span>เพิ่งเริ่มใช้?</span>
+        <button class="linkish" id="startHelp" type="button">อ่านคู่มือใช้งาน</button>
+      </div>
+    </div>
+
+    <div id="startSamples" hidden>
+      <div class="sample-grid" id="sampleGrid"></div>
+      <div class="start-foot">
+        <button class="btn ghost" id="sampleBack" type="button">← ย้อนกลับ</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="sheet" id="ask" hidden>

@@ -8,7 +8,7 @@
 
   /* =====================  ประกอบร่างแอป  ===================== */
   var $ = function(id){ return document.getElementById(id); };
-  var ws = null, engine = null, loading = false, booted = false;
+  var ws = null, engine = null, loading = false, booted = false, started = false;
   var tPreview = 0, tSave = 0, tToast = 0;
   var AUTOKEY = 'blockwright.autosave.v1';
   var SLOTKEY = 'blockwright.slot.v1';
@@ -233,7 +233,46 @@
     preview();
   }
   function autosave(){
-    try{ localStorage.setItem(AUTOKEY, projectJSON()); }catch(err){}
+    if(!started) return;   /* กันไม่ให้ลานเปล่าตอนเปิดโปรแกรมทับงานเดิม */
+    try{
+      localStorage.setItem(AUTOKEY, projectJSON());
+      localStorage.setItem(AUTOKEY + '.at', new Date().toLocaleString('th-TH',
+        { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }));
+    }catch(err){}
+  }
+
+  /* ---------- หน้าแรก ---------- */
+  function savedWork(){
+    try{
+      var raw = localStorage.getItem(AUTOKEY);
+      if(!raw) return null;
+      var obj = JSON.parse(raw);
+      var groups = (obj && obj.blocks && obj.blocks.blocks) ? obj.blocks.blocks.length : 0;
+      if(!groups) return null;
+      return { groups:groups, at:localStorage.getItem(AUTOKEY + '.at'), doc:obj };
+    }catch(err){ return null; }
+  }
+  function showStart(canClose){
+    $('startSamples').hidden = true;
+    $('startMain').hidden = false;
+    $('startClose').hidden = !canClose;
+    var work = savedWork();
+    $('optResume').disabled = !work;
+    $('optResumeSub').textContent = work
+      ? 'ทำต่อจากงานล่าสุด ' + work.groups + ' กลุ่มบล็อก' + (work.at ? ' · บันทึก ' + work.at : '')
+      : 'ยังไม่มีงานที่บันทึกไว้ในเครื่องนี้';
+    $('start').hidden = false;
+    setTimeout(function(){ $(work ? 'optResume' : 'optNew').focus(); }, 30);
+  }
+  function closeStart(){
+    $('start').hidden = true;
+    if(ws) setTimeout(function(){ Blockly.svgResize(ws); }, 30);
+  }
+  function loadTemplate(key){
+    stop();
+    loadProject(TEMPLATES[key].build());
+    $('log').innerHTML = '';
+    log('โหลด “' + TEMPLATES[key].label + '” แล้ว — กด ▶ เล่น ได้เลย', 'ok');
   }
   function scheduleAutosave(){ clearTimeout(tSave); tSave = setTimeout(autosave, 900); }
 
@@ -274,6 +313,7 @@
   function closeSheet(){ $('sheet').hidden = true; }
 
   var HELP_HTML =
+    '<p>เปิดโปรแกรมมาจะเจอหน้าแรกให้เลือกสามทาง คือ <b>เริ่มใหม่</b> ได้ลานบล็อกเปล่า <b>เรียกตัวอย่าง</b> เปิดเกมสำเร็จรูปมารื้อแก้ และ <b>แก้ไขเดิม</b> ทำต่อจากงานล่าสุด กลับมาหน้านี้ได้ทุกเมื่อด้วยปุ่ม 🏠 หน้าแรก</p>' +
     '<p>ต่อบล็อกทางซ้าย แล้วกด <b>▶ เล่น</b> เพื่อทดสอบทันที เวทีมีขนาด 480 × 360 จุด โดย x เพิ่มไปทางขวา และ y เพิ่มลงล่าง</p>' +
     '<h3>ลำดับที่แนะนำ</h3>' +
     '<ul>' +
@@ -430,22 +470,52 @@
       schedulePreview();
     });
 
-    /* เมนูเกมตัวอย่าง */
-    var sel = $('tplPicker');
+    /* รายการเกมตัวอย่างในหน้าแรก */
+    var grid = $('sampleGrid');
     Object.keys(TEMPLATES).forEach(function(k){
-      var o = document.createElement('option');
-      o.value = k; o.textContent = TEMPLATES[k].label;
-      sel.appendChild(o);
+      var card = document.createElement('button');
+      card.type = 'button'; card.className = 'sample';
+      var nm = document.createElement('span');
+      nm.className = 'sample-name'; nm.textContent = TEMPLATES[k].label;
+      var note = document.createElement('span');
+      note.className = 'sample-note'; note.textContent = TEMPLATES[k].note || '';
+      card.appendChild(nm); card.appendChild(note);
+      card.onclick = function(){
+        started = true;
+        loadTemplate(k);
+        closeStart();
+        showView('blocks');
+      };
+      grid.appendChild(card);
     });
-    sel.addEventListener('change', function(){
-      var k = sel.value;
-      if(!k) return;
+
+    $('btnHome').onclick = function(){ showStart(true); };
+    $('startClose').onclick = closeStart;
+    $('startHelp').onclick = function(){ openSheet('คู่มือใช้งาน', HELP_HTML); };
+    $('optSample').onclick = function(){
+      $('startMain').hidden = true; $('startSamples').hidden = false;
+      setTimeout(function(){ var f = grid.querySelector('.sample'); if(f) f.focus(); }, 30);
+    };
+    $('sampleBack').onclick = function(){
+      $('startSamples').hidden = true; $('startMain').hidden = false;
+      setTimeout(function(){ $('optSample').focus(); }, 30);
+    };
+    $('optNew').onclick = function(){
       stop();
-      loadProject(TEMPLATES[k].build());
+      loading = true; ws.clear(); loading = false;
+      started = true;
+      preview(); closeStart(); showView('blocks');
       $('log').innerHTML = '';
-      log('โหลด “' + TEMPLATES[k].label + '” แล้ว — กด ▶ เล่น ได้เลย', 'ok');
-      sel.value = '';
-    });
+      log('ลานบล็อกเปล่าพร้อมแล้ว — เริ่มจากบล็อก 🎬 เมื่อเริ่มเกม ในหมวดแรก', 'ok');
+    };
+    $('optResume').onclick = function(){
+      var work = savedWork();
+      if(!work) return;
+      started = true;
+      stop(); loadProject(work.doc); closeStart(); showView('blocks');
+      $('log').innerHTML = '';
+      log('เปิดงานล่าสุดขึ้นมาแล้ว ' + work.groups + ' กลุ่มบล็อก', 'ok');
+    };
 
     $('btnRun').onclick = run;
     $('btnStop').onclick = stop;
@@ -476,6 +546,7 @@
       if(ev.key !== 'Escape') return;
       if(!$('ask').hidden) askClose(false);
       else if(!$('sheet').hidden) closeSheet();
+      else if(!$('start').hidden && !$('startClose').hidden) closeStart();
     });
 
     $('tabPlay').onclick = function(){ showTab('play'); };
@@ -494,22 +565,20 @@
         { attributes:true, attributeFilter:['data-theme'] });
     }catch(err){}
 
-    /* โหลดงานล่าสุด หรือเกมตัวอย่างเริ่มต้น */
-    var startDoc = null;
-    if(data && data.ws) startDoc = data.ws;
-    if(!startDoc){
-      try{
-        var raw = localStorage.getItem(AUTOKEY);
-        if(raw) startDoc = JSON.parse(raw);
-      }catch(err){ startDoc = null; }
-    }
-    if(!startDoc) startDoc = TEMPLATES.platformer.build();
-    loadProject(startDoc);
-
     setRunning(false);
     showTab('play');
-    showView(window.innerWidth <= 920 ? 'blocks' : 'blocks');
-    log('Blockwright พร้อมใช้งาน — เวทีคือภาพตอนเริ่มเกม กด ▶ เล่น เพื่อเริ่ม', 'ok');
+    showView('blocks');
+
+    if(data && data.ws){
+      /* กลับมาจากการอัปเดตหน้าเว็บระหว่างใช้งาน ทำงานต่อได้เลย */
+      started = true;
+      loadProject(data.ws);
+      log('Blockwright พร้อมใช้งาน', 'ok');
+    } else {
+      preview();
+      showStart(false);
+      log('เลือกจากหน้าแรกว่าจะเริ่มใหม่ เรียกตัวอย่าง หรือแก้ไขงานเดิม', 'ok');
+    }
 
     var hot = window.claude && window.claude.hot;
     if(hot && typeof hot.snapshot === 'function'){

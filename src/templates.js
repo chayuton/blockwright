@@ -75,7 +75,9 @@
 
   var TEMPLATES = {
 
-  'platformer': { label:'🧍 แพลตฟอร์ม — เก็บเหรียญ', build:function(){ return doc([
+  'platformer': { label:'🧍 แพลตฟอร์ม — เก็บเหรียญ',
+    note:'ลูกศรซ้ายขวาเดิน เว้นวรรคกระโดดขึ้นแท่น เก็บเหรียญให้ครบสี่เหรียญโดยไม่โดนมอนสเตอร์',
+    build:function(){ return doc([
     at(SETUP([
       B('game_background', { COL:'#a8dcf5' }),
       B('game_title', { TXT:'ผจญภัยเก็บเหรียญ' }),
@@ -116,7 +118,9 @@
     at(HIT('ผู้เล่น', 'ศัตรู', [ SND('hit'), B('game_lose') ]), 430, 950)
   ]); }},
 
-  'shooter': { label:'🚀 ยานอวกาศ — ยิงศัตรู', build:function(){ return doc([
+  'shooter': { label:'🚀 ยานอวกาศ — ยิงศัตรู',
+    note:'เลื่อนซ้ายขวาด้วยลูกศร เว้นวรรคยิง ทำให้ถึง 100 คะแนนก่อนโดนชน',
+    build:function(){ return doc([
     at(SETUP([
       B('game_background', { COL:'#07080f' }),
       B('game_title', { TXT:'ป้องกันกาแล็กซี' }),
@@ -147,7 +151,9 @@
     at(HIT('ยาน', 'ศัตรู', [ SND('lose'), B('game_lose') ]), 440, 1040)
   ]); }},
 
-  'collector': { label:'🐱 เก็บแอปเปิลแข่งกับเวลา', build:function(){ return doc([
+  'collector': { label:'🐱 เก็บแอปเปิลแข่งกับเวลา',
+    note:'ลูกศรสี่ทิศพาแมวไปเก็บแอปเปิลแปดลูกให้ครบภายใน 20 วินาที',
+    build:function(){ return doc([
     at(SETUP([
       B('game_background', { COL:'#8ed08a' }),
       B('game_title', { TXT:'เก็บแอปเปิลให้ทัน' }),
@@ -168,7 +174,9 @@
     at(TIMEOUT([ SND('lose'), B('game_lose') ]), 440, 810)
   ]); }},
 
-  'breakout': { label:'🧱 ทุบอิฐ', build:function(){
+  'breakout': { label:'🧱 ทุบอิฐ',
+    note:'เลื่อนไม้ตีด้วยเมาส์ รับลูกบอลไว้ให้ได้แล้วทุบอิฐสิบสี่ก้อนให้หมด',
+    build:function(){
     var xs = [45, 105, 165, 225, 285, 345, 405], out = [], i;
     for(i = 0; i < xs.length; i++) out.push(SPAWN('อิฐ', xs[i], 72));
     for(i = 0; i < xs.length; i++) out.push(SPAWN('อิฐ', xs[i], 98));
@@ -206,7 +214,9 @@
     ]), 480, 580)
   ]); }},
 
-  'clicker': { label:'🎯 คลิกเป้าให้ไว', build:function(){ return doc([
+  'clicker': { label:'🎯 คลิกเป้าให้ไว',
+    note:'เป้าย้ายที่ทุกครั้งที่คลิกและหดลงเรื่อย ๆ ทำคะแนนให้ได้มากที่สุดใน 15 วินาที',
+    build:function(){ return doc([
     at(SETUP([
       B('game_background', { COL:'#1b1038' }),
       B('game_title', { TXT:'คลิกเป้าให้ไว' }),
@@ -227,7 +237,9 @@
     at(TIMEOUT([ B('show_msg', null, { TXT:TXT('หมดเวลา!'), SEC:N(2) }), B('game_win') ]), 440, 680)
   ]); }},
 
-  'survivor': { label:'🛡️ เอาตัวรอด — เล็งด้วยเมาส์', build:function(){ return doc([
+  'survivor': { label:'🛡️ เอาตัวรอด — เล็งด้วยเมาส์',
+    note:'ลูกศรเคลื่อนที่ เล็งด้วยเมาส์ คลิกยิง หลบทุ่นระเบิดให้รอดครบ 45 วินาที',
+    build:function(){ return doc([
     at(SETUP([
       B('game_background', { COL:'#07080f' }),
       B('game_title', { TXT:'เอาตัวรอด 45 วินาที' }),
