@@ -2,7 +2,7 @@
  *
  * โหลดไฟล์ใน src/ (ยกเว้น app.js ที่ต้องใช้ DOM) เข้าไปใน Node ตรง ๆ
  * แล้วเดินครบสายของจริง: เทมเพลต → บล็อก → โค้ด JavaScript → เอนจิน → เล่นจริง
- * โดยมีนักบินอัตโนมัติกดปุ่มแทนผู้เล่น
+ * โดยมีนักบินอัตโนมัติกดปุ่ม เลื่อนเมาส์ และคลิกแทนผู้เล่น
  *
  *   node test/run.mjs
  */
@@ -74,9 +74,16 @@ const alive = (st, kind) => st.ents.filter((e) => e.kind === kind && !e.dead);
 const PILOTS = {
   platformer(st) {
     const p = alive(st, 'ผู้เล่น')[0];
-    const coin = p && nearest(p, alive(st, 'เหรียญ'));
     st.keys = {};
-    if (!p || !coin) return;
+    if (!p) return;
+    const foe = nearest(p, alive(st, 'ศัตรู'));
+    if (foe && Math.abs(foe.x - p.x) < 85 && Math.abs(foe.y - p.y) < 60) {
+      st.keys[foe.x > p.x ? 'ArrowLeft' : 'ArrowRight'] = true;   // หนีศัตรูก่อน
+      if (p.onGround) st.keyQueue.push('Space');
+      return;
+    }
+    const coin = nearest(p, alive(st, 'เหรียญ'));
+    if (!coin) return;
     st.keys['ArrowLeft'] = coin.x < p.x - 6;
     st.keys['ArrowRight'] = coin.x > p.x + 6;
     if (coin.y < p.y - 12 && p.onGround) st.keyQueue.push('Space');
@@ -108,15 +115,34 @@ const PILOTS = {
     const target = alive(st, 'เป้า')[0];
     if (target && f % 12 === 0 && st.running) st.clickQueue.push({ x: target.x, y: target.y });
   },
+  survivor(st, f) {
+    const ship = alive(st, 'ยาน')[0];
+    if (!ship) return;
+    const foe = nearest(ship, alive(st, 'ศัตรู'));
+    st.keys = {};
+    if (foe) {
+      st.mouse.x = foe.x; st.mouse.y = foe.y;          // เล็งด้วย "เมาส์"
+      if (Math.hypot(foe.x - ship.x, foe.y - ship.y) < 110) {   // ใกล้ไปแล้ว ถอยหนี
+        st.keys['ArrowLeft'] = foe.x > ship.x;
+        st.keys['ArrowRight'] = foe.x < ship.x;
+        st.keys['ArrowUp'] = foe.y > ship.y;
+        st.keys['ArrowDown'] = foe.y < ship.y;
+      }
+    }
+    if (f % 10 === 0 && st.running) st.clickQueue.push({ x: st.mouse.x, y: st.mouse.y });
+  },
 };
 
 /* ---------- สิ่งที่แต่ละเกมต้องทำได้ ---------- */
 const EXPECT = {
-  platformer: { frames: 3000, minScore: 10, note: 'กระโดดขึ้นแท่นเก็บเหรียญได้' },
+  platformer: { frames: 3000, minScore: 10, survive: ['พื้น', 'แท่น'],
+                note: 'กระโดดขึ้นแท่นเก็บเหรียญได้ และฉากต้องไม่ร่วงตามแรงโน้มถ่วง' },
   shooter:    { frames: 3000, minScore: 30, note: 'ยิงโดนศัตรูได้' },
   collector:  { frames: 2000, minScore: 40, win: true, note: 'เก็บแอปเปิลครบและชนะ' },
   breakout:   { frames: 3000, minScore: 30, note: 'รับลูกบอลและทุบอิฐได้' },
   clicker:    { frames: 1200, minScore: 5,  note: 'คลิกเป้าแล้วได้คะแนน' },
+  survivor:   { frames: 2200, minScore: 60, survive: ['ทุ่นระเบิด'],
+                note: 'เล็งด้วยเมาส์แล้วยิงโดนศัตรูได้' },
 };
 
 /* ---------- เดินทดสอบ ---------- */
@@ -143,6 +169,9 @@ for (const key of Object.keys(TEMPLATES)) {
   if (errors.length) problems.push(`มีข้อผิดพลาดขณะเล่น ${errors.length} ครั้ง`);
   if (score < want.minScore) problems.push(`คะแนน ${score} ต่ำกว่าที่ควรได้ ${want.minScore} (${want.note})`);
   if (want.win && (!run.ended || run.ended.result !== 'win')) problems.push('เล่นจนจบแล้วไม่ชนะ');
+  for (const kind of want.survive || []) {
+    if (!alive(run.state, kind).length) problems.push(`“${kind}” หายไปจากเวทีทั้งที่ควรอยู่จนจบ`);
+  }
 
   const mark = problems.length ? '✗' : '✓';
   const outcome = run.ended ? `จบ:${run.ended.result}` : 'ยังเล่นอยู่';

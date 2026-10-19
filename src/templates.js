@@ -42,7 +42,10 @@
     sprite_size:['NAME'], sprite_goto:['NAME'], sprite_move:['NAME'], sprite_set:['NAME'],
     sprite_get:['NAME'], sprite_count:['NAME'], sprite_each:['NAME'], sprite_removeall:['NAME'],
     on_click:['NAME'], ctrl_move:['NAME'], ctrl_jump:['NAME'], ctrl_follow:['NAME','TARGET'],
-    on_collide:['A','B'], on_edge:['NAME'], set_edge:['NAME'], set_solid:['A','B'], touching:['A','B']
+    on_collide:['A','B'], on_edge:['NAME'], set_edge:['NAME'], set_solid:['A','B'], touching:['A','B'],
+    sprite_fixed:['NAME'], sprite_look:['NAME'], sprite_turn:['NAME'],
+    sprite_point:['NAME','TARGET'], sprite_point_mouse:['NAME'], sprite_forward:['NAME'],
+    distance:['A','B'], shoot:['BULLET','FROM']
   };
   var VARREG = {}, VARSEQ = 0;
   function SV(name){
@@ -58,6 +61,9 @@
     if(b.inputs) for(k in b.inputs){ markVars(b.inputs[k].block); markVars(b.inputs[k].shadow); }
     if(b.next) markVars(b.next.block);
   }
+  function FIX(name){ return B('sprite_fixed', { NAME:name }); }
+  function POINT(name, target){ return B('sprite_point', { NAME:name, TARGET:target }); }
+  function FWD(name, spd){ return B('sprite_forward', { NAME:name }, { SPD:N(spd) }); }
   function doc(blocks){
     blocks.forEach(markVars);
     var vars = [], n;
@@ -77,9 +83,11 @@
       B('sprite_create', { NAME:'พื้น', LOOK:'RECT', SIZE:30 }, { X:N(240), Y:N(346) }),
       B('sprite_size', { NAME:'พื้น' }, { W:N(480), H:N(28) }),
       B('sprite_color', { NAME:'พื้น', COL:'#8a5a3b' }),
+      FIX('พื้น'),
       B('sprite_create', { NAME:'แท่น', LOOK:'RECT', SIZE:30 }, { X:N(140), Y:N(252) }),
       B('sprite_size', { NAME:'แท่น' }, { W:N(120), H:N(18) }),
       B('sprite_color', { NAME:'แท่น', COL:'#3fb77a' }),
+      FIX('แท่น'),
       SPAWN('แท่น', 360, 192),
       SPAWN('แท่น', 240, 126),
       B('sprite_create', { NAME:'ผู้เล่น', LOOK:'🧍', SIZE:32 }, { X:N(60), Y:N(300) }),
@@ -87,13 +95,14 @@
       B('set_solid', { A:'ผู้เล่น', B:'พื้น' }),
       B('set_solid', { A:'ผู้เล่น', B:'แท่น' }),
       B('sprite_create', { NAME:'เหรียญ', LOOK:'🪙', SIZE:22 }, { X:N(140), Y:N(224) }),
+      FIX('เหรียญ'),
       SPAWN('เหรียญ', 360, 164),
       SPAWN('เหรียญ', 240, 98),
       SPAWN('เหรียญ', 440, 312),
-      B('sprite_create', { NAME:'ศัตรู', LOOK:'👾', SIZE:28 }, { X:N(400), Y:N(300) }),
+      B('sprite_create', { NAME:'ศัตรู', LOOK:'👾', SIZE:28 }, { X:N(445), Y:N(300) }),
       B('set_solid', { A:'ศัตรู', B:'พื้น' }),
       B('set_edge', { NAME:'ศัตรู', MODE:'bounce' }),
-      SET('vx', 'ศัตรู', N(-70))
+      SET('vx', 'ศัตรู', N(-55))
     ]), 24, 24),
     at(TICK([ B('ctrl_move', { NAME:'ผู้เล่น', MODE:'lr' }, { SPD:N(190) }) ]), 24, 700),
     at(KEY('Space', [
@@ -216,6 +225,71 @@
       SET('h', 'เป้า', MATH('MULTIPLY', GET('h', 'เป้า'), N(0.88)))
     ]), 440, 430),
     at(TIMEOUT([ B('show_msg', null, { TXT:TXT('หมดเวลา!'), SEC:N(2) }), B('game_win') ]), 440, 680)
+  ]); }},
+
+  'survivor': { label:'🛡️ เอาตัวรอด — เล็งด้วยเมาส์', build:function(){ return doc([
+    at(SETUP([
+      B('game_background', { COL:'#07080f' }),
+      B('game_title', { TXT:'เอาตัวรอด 45 วินาที' }),
+      B('game_gravity', null, { N:N(0) }),
+      B('lives_set', null, { N:N(3) }),
+
+      B('sprite_create', { NAME:'ยาน', LOOK:'RECT', SIZE:20 }, { X:N(240), Y:N(190) }),
+      B('sprite_size', { NAME:'ยาน' }, { W:N(34), H:N(13) }),
+      B('sprite_color', { NAME:'ยาน', COL:'#f08a24' }),
+      B('set_edge', { NAME:'ยาน', MODE:'stop' }),
+
+      B('sprite_define', { NAME:'กระสุน', LOOK:'CIRC', SIZE:8 }),
+      B('sprite_color', { NAME:'กระสุน', COL:'#f2c53d' }),
+      B('set_edge', { NAME:'กระสุน', MODE:'remove' }),
+
+      B('sprite_define', { NAME:'ศัตรู', LOOK:'👾', SIZE:28 }),
+      B('set_edge', { NAME:'ศัตรู', MODE:'remove' }),
+
+      B('sprite_create', { NAME:'ทุ่นระเบิด', LOOK:'💣', SIZE:26 }, { X:N(95), Y:N(95) }),
+      SPAWN('ทุ่นระเบิด', 385, 95),
+      SPAWN('ทุ่นระเบิด', 95, 265),
+      SPAWN('ทุ่นระเบิด', 385, 265),
+
+      B('timer_set', null, { SEC:N(45) }),
+      B('show_msg', null, { TXT:TXT('ลูกศรเคลื่อนที่ · เล็งด้วยเมาส์ · คลิกเพื่อยิง'), SEC:N(4) })
+    ]), 24, 24),
+
+    at(TICK([
+      B('ctrl_move', { NAME:'ยาน', MODE:'arrows' }, { SPD:N(200) }),
+      B('sprite_point_mouse', { NAME:'ยาน' }),
+      POINT('ศัตรู', 'ยาน'),
+      FWD('ศัตรู', 62),
+      B('sprite_turn', { NAME:'ทุ่นระเบิด' }, { DEG:N(2) }),
+      IF(CMP('LT', B('distance', { A:'ยาน', B:'ศัตรู' }), N(60)),
+         [ B('show_msg', null, { TXT:TXT('ระวัง!'), SEC:N(0.4) }) ])
+    ]), 24, 860),
+
+    at(B('on_click_stage', null, { DO:seq([
+      B('shoot', { BULLET:'กระสุน', FROM:'ยาน' }, { SPD:N(430) }),
+      SND('shoot')
+    ]) }), 24, 1130),
+
+    at(EVERY(1.3, [
+      B('sprite_spawn', { NAME:'ศัตรู' }, { X:RND(30, 450), Y:N(-25) })
+    ]), 520, 24),
+
+    at(HIT('กระสุน', 'ศัตรู', [
+      B('me_remove'), B('other_remove'), B('score_change', null, { N:N(10) }), SND('hit')
+    ]), 520, 250),
+
+    at(HIT('ยาน', 'ศัตรู', [
+      B('other_remove'), B('lives_change', null, { N:N(-1) }), SND('lose')
+    ]), 520, 500),
+
+    at(HIT('ยาน', 'ทุ่นระเบิด', [
+      B('lives_change', null, { N:N(-1) }), SND('hit'),
+      B('sprite_goto', { NAME:'ยาน' }, { X:N(240), Y:N(190) })
+    ]), 520, 730),
+
+    at(TIMEOUT([
+      B('show_msg', null, { TXT:TXT('รอดมาได้!'), SEC:N(2) }), B('game_win')
+    ]), 520, 980)
   ]); }}
 
   };

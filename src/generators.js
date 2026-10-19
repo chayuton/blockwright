@@ -94,6 +94,18 @@
   gen('game_lose', function(){ return 'G.lose();\n'; });
   gen('game_restart', function(){ return 'G.restart();\n'; });
 
+  /* ---------- บล็อกรุ่นที่สอง ---------- */
+  gen('sprite_fixed', function(b){ return 'G.setFixed(' + SN(b,'NAME') + ');\n'; });
+  gen('sprite_look', function(b){ return 'G.setLook(' + SN(b,'NAME') + ',' + F(b,'LOOK') + ');\n'; });
+  gen('sprite_turn', function(b,g){ return 'G.turn(' + SN(b,'NAME') + ',' + V(b,g,'DEG','15') + ');\n'; });
+  gen('sprite_point', function(b){ return 'G.pointAt(' + SN(b,'NAME') + ',' + SN(b,'TARGET') + ');\n'; });
+  gen('sprite_point_mouse', function(b){ return 'G.pointMouse(' + SN(b,'NAME') + ');\n'; });
+  gen('sprite_forward', function(b,g){ return 'G.forward(' + SN(b,'NAME') + ',' + V(b,g,'SPD','150') + ');\n'; });
+  gen('distance', function(b){ return ['G.distance(' + SN(b,'A') + ',' + SN(b,'B') + ')', 0]; });
+  gen('shoot', function(b,g){
+    return 'G.shoot(' + SN(b,'BULLET') + ',' + SN(b,'FROM') + ',' + V(b,g,'SPD','400') + ');\n'; });
+  gen('lives_set', function(b,g){ return 'G.setLives(' + V(b,g,'N','3') + ');\n'; });
+
   /* =====================  กล่องเครื่องมือ  ===================== */
   function tb(type, shadows){
     var o = { kind:'block', type:type };
@@ -118,12 +130,16 @@
       tb('sprite_color'), tb('sprite_size',{W:120,H:20}),
       tb('sprite_goto',{X:240,Y:180}), tb('sprite_move',{DX:5,DY:0}),
       tb('sprite_set',{V:0}), tb('sprite_get'), tb('sprite_count'),
+      tb('sprite_fixed'), tb('sprite_look'),
+      tb('sprite_turn',{DEG:15}), tb('sprite_point'), tb('sprite_point_mouse'),
+      tb('sprite_forward',{SPD:160}), tb('distance'),
       tb('sprite_each'), tb('me_set',{V:0}), tb('me_get'),
       tb('me_remove'), tb('other_remove'), tb('sprite_removeall')
     ]},
     { kind:'category', name:'🎮 การควบคุม', colour:String(C.input), contents:[
       tb('on_key'), tb('key_down'), tb('on_click'), tb('on_click_stage'),
-      tb('ctrl_move',{SPD:180}), tb('ctrl_jump',{P:520}), tb('ctrl_follow',{SPD:70})
+      tb('ctrl_move',{SPD:180}), tb('ctrl_jump',{P:520}), tb('ctrl_follow',{SPD:70}),
+      tb('shoot',{SPD:420})
     ]},
     { kind:'category', name:'⏱️ เวลา', colour:String(C.time), contents:[
       tb('on_tick'), tb('on_every',{SEC:1}), tb('after_delay',{SEC:2}),
@@ -134,7 +150,7 @@
     ]},
     { kind:'category', name:'🏅 คะแนนและเสียง', colour:String(C.score), contents:[
       tb('score_change',{N:10}), tb('score_set',{N:0}), tb('score_get'),
-      tb('lives_change',{N:-1}), tb('lives_get'),
+      tb('lives_change',{N:-1}), tb('lives_set',{N:3}), tb('lives_get'),
       tb('show_msg',{TXT:'เยี่ยมมาก!',SEC:2}), tb('play_sound')
     ]},
     { kind:'category', name:'🏁 จบเกม', colour:String(C.end), contents:[

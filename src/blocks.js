@@ -4,50 +4,60 @@
   'use strict';
 
   /* =====================================================================
-     สตูดิโอเกมบล็อก
+     Blockwright — เรียง · ต่อ · ก่อ
      แกนตัวต่อ: Blockly 13.3.0 (Google, Apache-2.0) โหลดจาก CDN
-     เอนจินเกม + ชุดบล็อกภาษาไทย: เขียนขึ้นใหม่ในไฟล์นี้
+     ชุดบล็อกภาษาไทยและเอนจินเกม: เขียนขึ้นใหม่
+
+     ป้ายในรายการเลือกเขียนไทยควบอังกฤษ คั่นด้วย · เพื่อให้ผู้เรียน
+     เห็นศัพท์อังกฤษที่ใช้จริงในวงการไปพร้อมกัน ส่วน “ค่า” ที่เก็บจริง
+     ไม่เปลี่ยน โปรเจกต์เก่าจึงยังโหลดได้ตามปกติ
      ===================================================================== */
 
+  /* ช่องเลือกชื่อตัวละคร ใช้ซ้ำในบล็อกใหม่ด้านล่าง */
+  function SPR(name){
+    return { type:'field_variable', name:name, variable:'ผู้เล่น',
+             variableTypes:['Sprite'], defaultType:'Sprite' };
+  }
+
   var LOOKS = [
-    ['▭ สี่เหลี่ยม','RECT'], ['● วงกลม','CIRC'],
-    ['🧍 คน','🧍'], ['🐱 แมว','🐱'], ['🐶 หมา','🐶'], ['🐦 นก','🐦'],
-    ['👾 มอนสเตอร์','👾'], ['🛸 จานบิน','🛸'], ['🚀 จรวด','🚀'], ['🚗 รถ','🚗'],
-    ['⭐ ดาว','⭐'], ['💎 เพชร','💎'], ['🪙 เหรียญ','🪙'], ['🍎 แอปเปิล','🍎'],
-    ['🏀 ลูกบอล','🏀'], ['🧱 อิฐ','🧱'], ['💣 ระเบิด','💣'], ['❤️ หัวใจ','❤️'],
-    ['🎯 เป้า','🎯'], ['🌵 ต้นไม้','🌵'], ['🔥 ไฟ','🔥'], ['⚪ จุด','⚪']
+    ['▭ สี่เหลี่ยม · Rect','RECT'], ['● วงกลม · Circle','CIRC'],
+    ['🧍 คน · Person','🧍'], ['🐱 แมว · Cat','🐱'], ['🐶 หมา · Dog','🐶'], ['🐦 นก · Bird','🐦'],
+    ['👾 มอนสเตอร์ · Monster','👾'], ['🛸 จานบิน · UFO','🛸'], ['🚀 จรวด · Rocket','🚀'], ['🚗 รถ · Car','🚗'],
+    ['⭐ ดาว · Star','⭐'], ['💎 เพชร · Gem','💎'], ['🪙 เหรียญ · Coin','🪙'], ['🍎 แอปเปิล · Apple','🍎'],
+    ['🏀 ลูกบอล · Ball','🏀'], ['🧱 อิฐ · Brick','🧱'], ['💣 ระเบิด · Bomb','💣'], ['❤️ หัวใจ · Heart','❤️'],
+    ['🎯 เป้า · Target','🎯'], ['🌵 ต้นไม้ · Cactus','🌵'], ['🔥 ไฟ · Fire','🔥'], ['⚪ จุด · Dot','⚪']
   ];
   var COLORS = [
-    ['แดง','#e2443b'], ['ส้ม','#f08a24'], ['เหลือง','#f2c53d'], ['เขียว','#3fb77a'],
-    ['ฟ้า','#36a3e0'], ['น้ำเงิน','#3a5bd1'], ['ม่วง','#8456d6'], ['ชมพู','#e866a6'],
-    ['น้ำตาล','#8a5a3b'], ['เทา','#8b91a6'], ['ขาว','#f4f6fb'], ['ดำ','#1b1f29']
+    ['แดง · Red','#e2443b'], ['ส้ม · Orange','#f08a24'], ['เหลือง · Yellow','#f2c53d'], ['เขียว · Green','#3fb77a'],
+    ['ฟ้า · Sky','#36a3e0'], ['น้ำเงิน · Blue','#3a5bd1'], ['ม่วง · Purple','#8456d6'], ['ชมพู · Pink','#e866a6'],
+    ['น้ำตาล · Brown','#8a5a3b'], ['เทา · Grey','#8b91a6'], ['ขาว · White','#f4f6fb'], ['ดำ · Black','#1b1f29']
   ];
   var BGS = [
-    ['ฟ้าสว่าง','#a8dcf5'], ['ฟ้าเข้ม','#12284d'], ['เขียวหญ้า','#8ed08a'],
-    ['ทราย','#f0dfb4'], ['ดำอวกาศ','#07080f'], ['ม่วงกลางคืน','#1b1038'],
-    ['เทาอ่อน','#dfe3ec'], ['ขาว','#ffffff']
+    ['ฟ้าสว่าง · Sky','#a8dcf5'], ['ฟ้าเข้ม · Deep sea','#12284d'], ['เขียวหญ้า · Grass','#8ed08a'],
+    ['ทราย · Sand','#f0dfb4'], ['ดำอวกาศ · Space','#07080f'], ['ม่วงกลางคืน · Night','#1b1038'],
+    ['เทาอ่อน · Light grey','#dfe3ec'], ['ขาว · White','#ffffff']
   ];
   var KEYS = [
-    ['◀ ลูกศรซ้าย','ArrowLeft'], ['▶ ลูกศรขวา','ArrowRight'],
-    ['▲ ลูกศรขึ้น','ArrowUp'], ['▼ ลูกศรลง','ArrowDown'],
-    ['เว้นวรรค','Space'], ['W','w'], ['A','a'], ['S','s'], ['D','d'], ['Enter','Enter']
+    ['◀ ลูกศรซ้าย · Left','ArrowLeft'], ['▶ ลูกศรขวา · Right','ArrowRight'],
+    ['▲ ลูกศรขึ้น · Up','ArrowUp'], ['▼ ลูกศรลง · Down','ArrowDown'],
+    ['เว้นวรรค · Space','Space'], ['W','w'], ['A','a'], ['S','s'], ['D','d'], ['Enter','Enter']
   ];
   var PROPS = [
-    ['ตำแหน่ง x','x'], ['ตำแหน่ง y','y'],
-    ['ความเร็วแนวนอน','vx'], ['ความเร็วแนวตั้ง','vy'],
-    ['ความกว้าง','w'], ['ความสูง','h'], ['มุมหมุน','rot']
+    ['ตำแหน่ง x · x','x'], ['ตำแหน่ง y · y','y'],
+    ['ความเร็วแนวนอน · vx','vx'], ['ความเร็วแนวตั้ง · vy','vy'],
+    ['ความกว้าง · width','w'], ['ความสูง · height','h'], ['มุมหมุน · angle','rot']
   ];
   var MOVES = [
-    ['ลูกศร 4 ทิศ','arrows'], ['ลูกศร ซ้าย-ขวา','lr'], ['ลูกศร ขึ้น-ลง','ud'],
-    ['ปุ่ม WASD','wasd'], ['ตามเมาส์','mouse'], ['ตามเมาส์ แนวนอน','mousex']
+    ['ลูกศร 4 ทิศ · Arrows','arrows'], ['ลูกศร ซ้าย-ขวา · Left/Right','lr'], ['ลูกศร ขึ้น-ลง · Up/Down','ud'],
+    ['ปุ่ม WASD · WASD','wasd'], ['ตามเมาส์ · Mouse','mouse'], ['ตามเมาส์ แนวนอน · Mouse X','mousex']
   ];
   var EDGES = [
-    ['เด้งกลับ','bounce'], ['หยุดที่ขอบ','stop'], ['วนไปอีกฝั่ง','wrap'],
-    ['หายไป','remove'], ['ผ่านออกไปได้','none']
+    ['เด้งกลับ · Bounce','bounce'], ['หยุดที่ขอบ · Stop','stop'], ['วนไปอีกฝั่ง · Wrap','wrap'],
+    ['หายไป · Remove','remove'], ['ผ่านออกไปได้ · Pass','none']
   ];
   var SOUNDS = [
-    ['เก็บของ','pickup'], ['กระโดด','jump'], ['ชน','hit'],
-    ['ยิง','shoot'], ['ชนะ','win'], ['แพ้','lose'], ['บี๊บ','beep']
+    ['เก็บของ · Pickup','pickup'], ['กระโดด · Jump','jump'], ['ชน · Hit','hit'],
+    ['ยิง · Shoot','shoot'], ['ชนะ · Win','win'], ['แพ้ · Lose','lose'], ['บี๊บ · Beep','beep']
   ];
 
   var C = { setup:20, sprite:205, input:285, time:50, hit:0, score:160, end:330 };
@@ -290,6 +300,58 @@
   { type:'game_win', message0:'🏆 ชนะเกม', previousStatement:null, colour:C.end },
   { type:'game_lose', message0:'💀 แพ้เกม', previousStatement:null, colour:C.end },
   { type:'game_restart', message0:'🔄 เริ่มเกมใหม่', previousStatement:null, colour:C.end }
+
+  ]);
+
+  /* =====================================================================
+     บล็อกรุ่นที่สอง — การหมุน การเล็ง การยิง และการตรึงไว้กับที่
+     ===================================================================== */
+  Blockly.defineBlocksWithJsonArray([
+
+  { type:'sprite_fixed', message0:'📌 ตรึง %1 ไว้กับที่',
+    args0:[SPR('NAME')],
+    previousStatement:null, nextStatement:null, colour:C.sprite,
+    tooltip:'ไม่ให้ตกตามแรงโน้มถ่วง ใช้กับพื้น แท่น และของที่ต้องลอยนิ่ง ๆ (ยังกำหนดความเร็วให้เคลื่อนที่เองได้)' },
+
+  { type:'sprite_look', message0:'เปลี่ยนรูป %1 เป็น %2',
+    args0:[SPR('NAME'), {type:'field_dropdown', name:'LOOK', options:LOOKS}],
+    previousStatement:null, nextStatement:null, colour:C.sprite,
+    tooltip:'เปลี่ยนหน้าตาระหว่างเล่น เช่น โดนแล้วกลายเป็นไฟ' },
+
+  { type:'sprite_turn', message0:'🔄 หมุน %1 ไป %2 องศา',
+    args0:[SPR('NAME'), {type:'input_value', name:'DEG', check:'Number'}],
+    inputsInline:true, previousStatement:null, nextStatement:null, colour:C.sprite,
+    tooltip:'บวกคือหมุนตามเข็มนาฬิกา วางในบล็อกทำซ้ำทุกเฟรมจะหมุนต่อเนื่อง' },
+
+  { type:'sprite_point', message0:'🧭 หัน %1 ไปทาง %2',
+    args0:[SPR('NAME'), SPR('TARGET')],
+    previousStatement:null, nextStatement:null, colour:C.sprite,
+    tooltip:'ปรับมุมหมุนให้ชี้ไปหาตัวละครอีกตัว' },
+
+  { type:'sprite_point_mouse', message0:'🧭 หัน %1 ไปทางเมาส์',
+    args0:[SPR('NAME')],
+    previousStatement:null, nextStatement:null, colour:C.sprite,
+    tooltip:'ใช้คู่กับบล็อกยิง เพื่อเล็งด้วยเมาส์' },
+
+  { type:'sprite_forward', message0:'➡️ ให้ %1 พุ่งไปข้างหน้า ความเร็ว %2',
+    args0:[SPR('NAME'), {type:'input_value', name:'SPD', check:'Number'}],
+    inputsInline:true, previousStatement:null, nextStatement:null, colour:C.sprite,
+    tooltip:'เคลื่อนที่ตามมุมที่หันอยู่ ใช้คู่กับบล็อกหัน' },
+
+  { type:'distance', message0:'📏 ระยะห่างระหว่าง %1 กับ %2',
+    args0:[SPR('A'), SPR('B')],
+    output:'Number', colour:C.sprite,
+    tooltip:'ระยะที่ใกล้ที่สุดระหว่างสองกลุ่ม หน่วยเป็นจุดบนเวที' },
+
+  { type:'shoot', message0:'🔫 ยิง %1 ออกจาก %2 ความเร็ว %3',
+    args0:[SPR('BULLET'), SPR('FROM'), {type:'input_value', name:'SPD', check:'Number'}],
+    inputsInline:true, previousStatement:null, nextStatement:null, colour:C.input,
+    tooltip:'สร้างกระสุนที่ตำแหน่งผู้ยิง แล้วพุ่งออกไปตามมุมที่ผู้ยิงหันอยู่' },
+
+  { type:'lives_set', message0:'❤️ ตั้งพลังชีวิตเป็น %1',
+    args0:[{type:'input_value', name:'N', check:'Number'}],
+    inputsInline:true, previousStatement:null, nextStatement:null, colour:C.score,
+    tooltip:'ใส่ไว้ในบล็อกเริ่มเกม เพื่อให้แถบพลังชีวิตแสดงบนเวที' }
 
   ]);
 

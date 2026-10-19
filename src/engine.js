@@ -14,7 +14,7 @@
       S = {
         bg:'#a8dcf5', title:'', gravity:0,
         ents:[], defs:{}, seq:0, warned:{},
-        score:0, lives:3, timer:null, timerOn:false,
+        score:0, lives:3, livesShown:false, timer:null, timerOn:false,
         msg:null, msgT:0, time:0,
         keys:{}, keyQueue:[], clickQueue:[],
         mouse:{ x:W/2, y:H/2 },
@@ -37,7 +37,7 @@
       var d = S.defs[name];
       if(!d){
         if(!S.warned[name]){ S.warned[name] = 1; log('ยังไม่มีตัวละครชื่อ “' + name + '” — ตรวจชื่อในบล็อกอีกครั้ง', 'warn'); }
-        d = S.defs[name] = { look:'⚪', w:22, h:22, color:'#8b91a6', edge:'none' };
+        d = S.defs[name] = { look:'⚪', w:22, h:22, color:'#8b91a6', edge:'none', fixed:false };
       }
       return d;
     }
@@ -53,7 +53,7 @@
       var d = defOf(name);
       var e = { id:++S.seq, kind:name, look:d.look, color:d.color, w:d.w, h:d.h,
                 x:num(x,0), y:num(y,0), vx:0, vy:0, rot:0, edge:d.edge || 'none',
-                onGround:false, entered:false, dead:false };
+                fixed:!!d.fixed, onGround:false, entered:false, dead:false };
       if(S.ents.length > 600){ log('ตัวละครเยอะเกิน 600 ตัว — ลบตัวเก่าที่สุดทิ้ง', 'warn'); S.ents.shift(); }
       S.ents.push(e);
       return e;
@@ -74,7 +74,8 @@
         size = Math.max(4, num(size, 24));
         var old = S.defs[name];
         S.defs[name] = { look:look, w:size, h:size,
-          color:(old && old.color) || '#3fb77a', edge:(old && old.edge) || 'none' };
+          color:(old && old.color) || '#3fb77a', edge:(old && old.edge) || 'none',
+          fixed:!!(old && old.fixed) };
       },
       create:function(name, look, size, x, y){ G.define(name, look, size); return add(name, x, y); },
       spawn:function(name, x, y){ return add(name, x, y); },
@@ -89,6 +90,51 @@
       setEdge:function(name, mode){
         defOf(name).edge = mode;
         list(name).forEach(function(e){ e.edge = mode; });
+      },
+      setFixed:function(name){
+        defOf(name).fixed = true;
+        list(name).forEach(function(e){ e.fixed = true; e.vy = 0; });
+      },
+      setLook:function(name, look){
+        defOf(name).look = look;
+        list(name).forEach(function(e){ e.look = look; });
+      },
+      turn:function(name, deg){ list(name).forEach(function(e){ e.rot += num(deg, 0); }); },
+      pointAt:function(name, target){
+        var t = list(target)[0]; if(!t) return;
+        list(name).forEach(function(e){
+          if(e !== t) e.rot = Math.atan2(t.y - e.y, t.x - e.x) * 180 / Math.PI;
+        });
+      },
+      pointMouse:function(name){
+        list(name).forEach(function(e){
+          e.rot = Math.atan2(S.mouse.y - e.y, S.mouse.x - e.x) * 180 / Math.PI;
+        });
+      },
+      forward:function(name, spd){
+        var sp = num(spd, 0);
+        list(name).forEach(function(e){
+          var r = e.rot * Math.PI / 180;
+          e.vx = Math.cos(r) * sp; e.vy = Math.sin(r) * sp;
+        });
+      },
+      shoot:function(bullet, from, spd){
+        var sp = num(spd, 300);
+        list(from).forEach(function(src){
+          var e = add(bullet, src.x, src.y);
+          e.rot = src.rot;
+          var r = e.rot * Math.PI / 180;
+          e.vx = Math.cos(r) * sp; e.vy = Math.sin(r) * sp;
+        });
+      },
+      distance:function(a, b){
+        var A = list(a), B = list(b), best = 99999, i, j, d;
+        for(i = 0; i < A.length; i++) for(j = 0; j < B.length; j++){
+          if(A[i] === B[j]) continue;
+          d = Math.sqrt((A[i].x - B[j].x) * (A[i].x - B[j].x) + (A[i].y - B[j].y) * (A[i].y - B[j].y));
+          if(d < best) best = d;
+        }
+        return Math.round(best);
       },
       goTo:function(name, x, y){ list(name).forEach(function(e){ e.x = num(x, e.x); e.y = num(y, e.y); }); },
       moveBy:function(name, dx, dy){ list(name).forEach(function(e){ e.x += num(dx, 0); e.y += num(dy, 0); }); },
@@ -166,7 +212,8 @@
       addScore:function(n){ S.score += num(n, 0); },
       setScore:function(n){ S.score = num(n, 0); },
       getScore:function(){ return S.score; },
-      addLives:function(n){ S.lives += num(n, 0); if(S.lives <= 0){ S.lives = 0; G.lose(); } },
+      addLives:function(n){ S.livesShown = true; S.lives += num(n, 0); if(S.lives <= 0){ S.lives = 0; G.lose(); } },
+      setLives:function(n){ S.livesShown = true; S.lives = Math.max(0, num(n, 3)); },
       getLives:function(){ return S.lives; },
       say:function(t, sec){ S.msg = String(t); S.msgT = Math.max(0.2, num(sec, 2)); },
       sound:play,
@@ -277,7 +324,7 @@
       for(i = 0; i < S.ents.length; i++){
         var e = S.ents[i];
         if(e.dead) continue;
-        e.vy += S.gravity * dt;
+        if(!e.fixed) e.vy += S.gravity * dt;
         e.x += e.vx * dt; e.y += e.vy * dt;
         e.onGround = false;
       }
@@ -323,7 +370,7 @@
       ctx.fillText(S.title || 'เกมของฉัน', 10, 14);
       ctx.textAlign = 'right';
       var bits = ['คะแนน ' + S.score];
-      if(S.lives !== 3 || S.lives <= 0) bits.push('❤️ ' + S.lives);
+      if(S.livesShown || S.lives !== 3) bits.push('❤️ ' + S.lives);
       if(S.timerOn) bits.push('⏳ ' + Math.ceil(S.timer) + 'วิ');
       ctx.fillText(bits.join('   '), W - 10, 14);
       if(S.msg){
